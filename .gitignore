@@ -1,0 +1,71 @@
+# Logs
+storage/logs/*.log
+*.log
+
+# Cache
+storage/cache/*
+!storage/cache/.gitkeep
+storage/framework/cache/*
+!storage/framework/cache/.gitkeep
+
+# Sessions
+storage/framework/sessions/*
+!storage/framework/sessions/.gitkeep
+
+# Views
+storage/framework/views/*
+!storage/framework/views/.gitkeep
+
+# Testing
+storage/framework/testing/*
+!storage/framework/testing/.gitkeep
+
+# Storage
+storage/app/*
+!storage/app/.gitkeep
+!storage/app/public/
+
+# Environment
+.env
+.env.backup
+.env.production
+
+# Composer
+vendor/
+composer.lock
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Build
+public_html/build/
+public_html/hot
+public_html/storage
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Vite
+.vite/
+dist/
+
+# PHP
+*.cache
+.phpunit.result.cache
+
+# Database
+*.sqlite
+*.sqlite3
+
+# Maintenance
+storage/framework/down
