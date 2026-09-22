@@ -25,6 +25,9 @@ final class Kernel
         \VtPhp\Console\Commands\MakeResourceCommand::class,
         \VtPhp\Console\Commands\MakeMigrationCommand::class,
         \VtPhp\Console\Commands\MakeMiddlewareCommand::class,
+        \VtPhp\Console\Commands\MakeSeederCommand::class,
+        \VtPhp\Console\Commands\MakeMailCommand::class,
+        \VtPhp\Console\Commands\DbSeedCommand::class,
     ];
 
     public function __construct(private Application $app)

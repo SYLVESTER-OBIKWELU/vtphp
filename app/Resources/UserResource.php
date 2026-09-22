@@ -17,7 +17,7 @@ final class UserResource extends JsonResource
             'id' => $this->resource->id,
             'name' => $this->resource->name,
             'email' => $this->resource->email,
-            'created_at' => $this->resource->createdAt->format(DATE_ATOM),
+            'created_at' => $this->resource->created_at?->toAtomString(),
         ];
     }
 }

@@ -1,0 +1,16 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Mail;
+
+use VtPhp\Mail\Mailable;
+
+final class {{ class }} extends Mailable
+{
+    public function build(): void
+    {
+        $this->subject('{{ class }}')
+            ->view('emails.{{ view }}');
+    }
+}

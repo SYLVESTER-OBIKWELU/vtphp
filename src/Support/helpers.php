@@ -76,6 +76,23 @@ if (!function_exists('app_path')) {
     }
 }
 
+if (!function_exists('resource_path')) {
+    function resource_path(string $path = ''): string
+    {
+        return app()->resourcePath($path);
+    }
+}
+
+if (!function_exists('view')) {
+    /**
+     * @param array<string, mixed> $data
+     */
+    function view(string $view, array $data = []): string
+    {
+        return app(\VtPhp\View\BladeEngine::class)->render($view, $data);
+    }
+}
+
 if (!function_exists('response')) {
     function response(): \VtPhp\Http\ResponseFactory
     {

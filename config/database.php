@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 return [
-    'default' => env('DB_CONNECTION', 'mysql'),
+    'default' => env('DB_CONNECTION', 'sqlite'),
 
     'connections' => [
         'mysql' => [

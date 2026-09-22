@@ -78,6 +78,11 @@ class Application extends Container
         return $this->joinPaths($this->basePath.'/app', $path);
     }
 
+    public function resourcePath(string $path = ''): string
+    {
+        return $this->joinPaths($this->basePath.'/resources', $path);
+    }
+
     private function joinPaths(string $base, string $path): string
     {
         return $path === '' ? $base : $base.'/'.ltrim($path, '\\/');
