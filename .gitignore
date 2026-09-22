@@ -1,0 +1,11 @@
+/vendor/
+/.env
+/storage/logs/*.log
+/storage/framework/cache/*
+!/storage/framework/cache/.gitkeep
+/bootstrap/cache/*
+!/bootstrap/cache/.gitkeep
+.phpunit.result.cache
+.php-cs-fixer.cache
+/.idea
+/.vscode

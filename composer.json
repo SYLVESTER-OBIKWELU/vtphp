@@ -1,0 +1,70 @@
+{
+  "name": "vtapp/vtphp",
+  "description": "VtPhp — an independent, API-first PHP framework with Laravel-inspired developer experience, built on PSR standards and Symfony/Doctrine/Monolog components. Zero Laravel/Illuminate dependencies.",
+  "type": "project",
+  "license": "MIT",
+  "keywords": [
+    "framework",
+    "api",
+    "psr-7",
+    "psr-15",
+    "rest"
+  ],
+  "require": {
+    "php": "^8.4",
+    "ext-json": "*",
+    "ext-mbstring": "*",
+    "ext-pdo": "*",
+    "psr/container": "^2.0",
+    "psr/http-message": "^2.0",
+    "psr/http-factory": "^1.1",
+    "psr/http-server-handler": "^1.0",
+    "psr/http-server-middleware": "^1.0",
+    "psr/log": "^3.0",
+    "psr/event-dispatcher": "^1.0",
+    "psr/simple-cache": "^3.0",
+    "psr/clock": "^1.0",
+    "symfony/routing": "^7.4",
+    "symfony/console": "^7.4",
+    "symfony/dotenv": "^7.4",
+    "symfony/process": "^7.4",
+    "doctrine/dbal": "^4.4",
+    "monolog/monolog": "^3.12",
+    "nyholm/psr7": "^1.8",
+    "nyholm/psr7-server": "^1.1"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^11.5",
+    "phpstan/phpstan": "^1.12",
+    "friendsofphp/php-cs-fixer": "^3.64"
+  },
+  "autoload": {
+    "psr-4": {
+      "VtPhp\\": "src/",
+      "App\\": "app/"
+    },
+    "files": [
+      "src/Support/helpers.php"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "VtPhp\\Tests\\": "tests/"
+    }
+  },
+  "bin": [
+    "forge"
+  ],
+  "config": {
+    "sort-packages": true,
+    "optimize-autoloader": true,
+    "preferred-install": "dist"
+  },
+  "scripts": {
+    "test": "phpunit",
+    "stan": "phpstan analyse",
+    "fmt": "php-cs-fixer fix"
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}

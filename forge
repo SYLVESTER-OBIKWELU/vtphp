@@ -1,0 +1,18 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Symfony\Component\Console\Input\ArgvInput;
+use Symfony\Component\Console\Output\ConsoleOutput;
+use VtPhp\Foundation\Application;
+use VtPhp\Foundation\Console\Kernel;
+
+require __DIR__.'/vendor/autoload.php';
+
+/** @var Application $app */
+$app = require __DIR__.'/bootstrap/app.php';
+
+$kernel = $app->make(Kernel::class);
+
+exit($kernel->handle(new ArgvInput(), new ConsoleOutput()));
