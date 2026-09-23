@@ -6,11 +6,11 @@ Every uncaught exception thrown during a request is caught by
 
 ```json
 {
-    "success": false,
-    "error": {
-        "code": "NOT_FOUND",
-        "message": "Route [/nope] not found."
-    }
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Route [/nope] not found."
+  }
 }
 ```
 
@@ -21,15 +21,15 @@ thrown class) and `error.trace`.
 
 All extend `VtPhp\Exceptions\HttpException(int $status, string $message, string $errorCode, array $context = [])`:
 
-| Exception | Status | Error code |
-| --- | --- | --- |
-| `NotFoundHttpException` | 404 | `NOT_FOUND` |
-| `MethodNotAllowedHttpException` | 405 | `METHOD_NOT_ALLOWED` |
-| `ConflictHttpException` | 409 | `CONFLICT` |
-| `AuthenticationException` | 401 | `UNAUTHENTICATED` |
-| `AuthorizationException` | 403 | `FORBIDDEN` |
-| `TooManyRequestsHttpException` | 429 | `TOO_MANY_REQUESTS` |
-| `ValidationException` | 422 | `VALIDATION_ERROR` (adds an `errors` map — see [Validation](validation.md)) |
+| Exception                       | Status | Error code                                                                  |
+| ------------------------------- | ------ | --------------------------------------------------------------------------- |
+| `NotFoundHttpException`         | 404    | `NOT_FOUND`                                                                 |
+| `MethodNotAllowedHttpException` | 405    | `METHOD_NOT_ALLOWED`                                                        |
+| `ConflictHttpException`         | 409    | `CONFLICT`                                                                  |
+| `AuthenticationException`       | 401    | `UNAUTHENTICATED`                                                           |
+| `AuthorizationException`        | 403    | `FORBIDDEN`                                                                 |
+| `TooManyRequestsHttpException`  | 429    | `TOO_MANY_REQUESTS`                                                         |
+| `ValidationException`           | 422    | `VALIDATION_ERROR` (adds an `errors` map — see [Validation](validation.md)) |
 
 Throw any of these from a controller, service, or middleware — you don't
 need to catch them yourself:

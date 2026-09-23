@@ -32,11 +32,11 @@ to guard against session fixation.
 
 The sample `app/Controllers/AuthController.php` exposes:
 
-| Method | URI | Description |                             
-| --- | --- | --- |
-| `POST` | `/api/v1/login` | `attempt()` credentials, sets the session cookie on success. |
-| `POST` | `/api/v1/logout` | Invalidates the session. |
-| `GET` | `/api/v1/me` | Returns the authenticated user (protected by `Authenticate::class`). |
+| Method | URI              | Description                                                          |
+| ------ | ---------------- | -------------------------------------------------------------------- |
+| `POST` | `/api/v1/login`  | `attempt()` credentials, sets the session cookie on success.         |
+| `POST` | `/api/v1/logout` | Invalidates the session.                                             |
+| `GET`  | `/api/v1/me`     | Returns the authenticated user (protected by `Authenticate::class`). |
 
 ## Protecting routes
 

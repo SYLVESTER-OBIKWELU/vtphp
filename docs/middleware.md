@@ -65,14 +65,14 @@ protected array $middleware = [
 ];
 ```
 
-`AddQueuedCookiesToResponse` is listed *before* `StartSession` so that, on
+`AddQueuedCookiesToResponse` is listed _before_ `StartSession` so that, on
 the way back out, it can see the session cookie that `StartSession` queued.
 
 ## Built-in middleware
 
-| Class | Purpose |
-| --- | --- |
-| `VtPhp\Middleware\RequestIdMiddleware` | Assigns/propagates an `X-Request-ID` header. |
-| `VtPhp\Middleware\AddQueuedCookiesToResponse` | Attaches cookies queued via `cookie()` as `Set-Cookie` headers. |
-| `VtPhp\Middleware\StartSession` | Starts/resumes the session and saves it after the response is produced. |
-| `VtPhp\Middleware\Authenticate` | Rejects the request with a 401 if the given guard has no authenticated user. |
+| Class                                         | Purpose                                                                      |
+| --------------------------------------------- | ---------------------------------------------------------------------------- |
+| `VtPhp\Middleware\RequestIdMiddleware`        | Assigns/propagates an `X-Request-ID` header.                                 |
+| `VtPhp\Middleware\AddQueuedCookiesToResponse` | Attaches cookies queued via `cookie()` as `Set-Cookie` headers.              |
+| `VtPhp\Middleware\StartSession`               | Starts/resumes the session and saves it after the response is produced.      |
+| `VtPhp\Middleware\Authenticate`               | Rejects the request with a 401 if the given guard has no authenticated user. |

@@ -69,11 +69,11 @@ cache()->store('redis')->get('key'); // a specific named store, bypassing 'defau
 
 Supported drivers (`CACHE_DRIVER` / `config/cache.php`'s `stores`):
 
-| Driver | Notes |
-| --- | --- |
+| Driver  | Notes                                                          |
+| ------- | -------------------------------------------------------------- |
 | `array` | In-memory, per-request only. Good default for local dev/tests. |
-| `file` | Persists to `storage/framework/cache/data`. |
-| `redis` | See below — requires an extra package. |
+| `file`  | Persists to `storage/framework/cache/data`.                    |
+| `redis` | See below — requires an extra package.                         |
 
 ### Redis is opt-in
 

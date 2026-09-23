@@ -52,20 +52,20 @@ JSON error response automatically — no try/catch needed in the controller.
 Injected automatically into any controller action or request DTO method that
 type-hints it:
 
-| Method | Description |
-| --- | --- |
-| `method()` | HTTP method. |
-| `path()` | URI path. |
-| `query(string $key, mixed $default = null)` | A single query-string value. |
-| `input(string $key, mixed $default = null)` | A value from query + parsed body. |
-| `all()` | Query params merged with parsed body. |
-| `json()` | Parsed JSON body as an array. |
-| `has(string $key)` | Whether a key exists in `all()`. |
-| `header(string $key, ?string $default = null)` | A request header. |
-| `cookie(string $key, ?string $default = null)` | An incoming cookie value. |
-| `bearerToken()` | The `Bearer` token from the `Authorization` header, if any. |
-| `route(string $key, mixed $default = null)` | A matched route parameter. |
-| `psr()` | The underlying PSR-7 `ServerRequestInterface`. |
+| Method                                         | Description                                                 |
+| ---------------------------------------------- | ----------------------------------------------------------- |
+| `method()`                                     | HTTP method.                                                |
+| `path()`                                       | URI path.                                                   |
+| `query(string $key, mixed $default = null)`    | A single query-string value.                                |
+| `input(string $key, mixed $default = null)`    | A value from query + parsed body.                           |
+| `all()`                                        | Query params merged with parsed body.                       |
+| `json()`                                       | Parsed JSON body as an array.                               |
+| `has(string $key)`                             | Whether a key exists in `all()`.                            |
+| `header(string $key, ?string $default = null)` | A request header.                                           |
+| `cookie(string $key, ?string $default = null)` | An incoming cookie value.                                   |
+| `bearerToken()`                                | The `Bearer` token from the `Authorization` header, if any. |
+| `route(string $key, mixed $default = null)`    | A matched route parameter.                                  |
+| `psr()`                                        | The underlying PSR-7 `ServerRequestInterface`.              |
 
 ## Validation rules
 
