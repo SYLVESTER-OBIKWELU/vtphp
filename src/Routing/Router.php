@@ -31,49 +31,55 @@ final class Router
 
     /**
      * @param array{0: class-string, 1: string}|string|callable $action
+     * @param array<int, class-string> $middleware
      */
-    public function get(string $uri, array|string|callable $action, ?string $name = null): void
+    public function get(string $uri, array|string|callable $action, ?string $name = null, array $middleware = []): void
     {
-        $this->map(['GET'], $uri, $action, $name);
+        $this->map(['GET'], $uri, $action, $name, $middleware);
     }
 
     /**
      * @param array{0: class-string, 1: string}|string|callable $action
+     * @param array<int, class-string> $middleware
      */
-    public function post(string $uri, array|string|callable $action, ?string $name = null): void
+    public function post(string $uri, array|string|callable $action, ?string $name = null, array $middleware = []): void
     {
-        $this->map(['POST'], $uri, $action, $name);
+        $this->map(['POST'], $uri, $action, $name, $middleware);
     }
 
     /**
      * @param array{0: class-string, 1: string}|string|callable $action
+     * @param array<int, class-string> $middleware
      */
-    public function put(string $uri, array|string|callable $action, ?string $name = null): void
+    public function put(string $uri, array|string|callable $action, ?string $name = null, array $middleware = []): void
     {
-        $this->map(['PUT'], $uri, $action, $name);
+        $this->map(['PUT'], $uri, $action, $name, $middleware);
     }
 
     /**
      * @param array{0: class-string, 1: string}|string|callable $action
+     * @param array<int, class-string> $middleware
      */
-    public function patch(string $uri, array|string|callable $action, ?string $name = null): void
+    public function patch(string $uri, array|string|callable $action, ?string $name = null, array $middleware = []): void
     {
-        $this->map(['PATCH'], $uri, $action, $name);
+        $this->map(['PATCH'], $uri, $action, $name, $middleware);
     }
 
     /**
      * @param array{0: class-string, 1: string}|string|callable $action
+     * @param array<int, class-string> $middleware
      */
-    public function delete(string $uri, array|string|callable $action, ?string $name = null): void
+    public function delete(string $uri, array|string|callable $action, ?string $name = null, array $middleware = []): void
     {
-        $this->map(['DELETE'], $uri, $action, $name);
+        $this->map(['DELETE'], $uri, $action, $name, $middleware);
     }
 
     /**
      * @param array<int, string> $methods
      * @param array{0: class-string, 1: string}|string|callable $action
+     * @param array<int, class-string> $middleware
      */
-    public function map(array $methods, string $uri, array|string|callable $action, ?string $name = null): void
+    public function map(array $methods, string $uri, array|string|callable $action, ?string $name = null, array $middleware = []): void
     {
         $group = $this->currentGroup();
         $uri = rtrim(($group['prefix'] ?? '').'/'.ltrim($uri, '/'), '/') ?: '/';
@@ -84,7 +90,7 @@ final class Router
             $uri,
             defaults: [
                 '_action' => $action,
-                '_middleware' => $group['middleware'] ?? [],
+                '_middleware' => [...($group['middleware'] ?? []), ...$middleware],
             ],
             methods: $methods,
         );

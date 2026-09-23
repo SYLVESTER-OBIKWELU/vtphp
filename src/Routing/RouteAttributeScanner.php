@@ -17,7 +17,7 @@ final class RouteAttributeScanner
             foreach ($method->getAttributes(Attributes\Route::class) as $attribute) {
                 $route = $attribute->newInstance();
 
-                $router->map([$route->method], $route->path, [$class, $method->getName()], $route->name);
+                $router->map([$route->method], $route->path, [$class, $method->getName()], $route->name, $route->middleware);
             }
         }
     }

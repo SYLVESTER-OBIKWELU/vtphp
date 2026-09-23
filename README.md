@@ -107,17 +107,17 @@ PSR Standards + Vendor Components (Symfony Routing/Console/Dotenv, Doctrine DBAL
 `routes/api.php` registers a sample `User` CRUD resource plus password-recovery
 and email-verification endpoints under the `/api/v1` prefix:
 
-| Method | URI                                       | Description                                   |
-|--------|--------------------------------------------|------------------------------------------------|
-| GET    | `/api/v1/users`                             | List users                                     |
-| POST   | `/api/v1/users`                             | Create a user (`name`, `email`, `password`, `password_confirmation`) |
-| GET    | `/api/v1/users/{id}`                        | Show a user                                    |
-| PATCH  | `/api/v1/users/{id}`                        | Update a user (`name`, `email` — both optional)|
-| DELETE | `/api/v1/users/{id}`                        | Delete a user (`204 No Content`)               |
-| POST   | `/api/v1/password/forgot`                   | Request a password reset email (`email`)       |
-| POST   | `/api/v1/password/reset`                    | Reset a password (`email`, `token`, `password`, `password_confirmation`) |
-| POST   | `/api/v1/email/verification-notification`  | (Re)send the email verification link (`email`)|
-| GET    | `/api/v1/email/verify/{id}/{hash}`          | Verify an email address via the emailed link   |
+| Method | URI                                       | Description                                                              |
+| ------ | ----------------------------------------- | ------------------------------------------------------------------------ |
+| GET    | `/api/v1/users`                           | List users                                                               |
+| POST   | `/api/v1/users`                           | Create a user (`name`, `email`, `password`, `password_confirmation`)     |
+| GET    | `/api/v1/users/{id}`                      | Show a user                                                              |
+| PATCH  | `/api/v1/users/{id}`                      | Update a user (`name`, `email` — both optional)                          |
+| DELETE | `/api/v1/users/{id}`                      | Delete a user (`204 No Content`)                                         |
+| POST   | `/api/v1/password/forgot`                 | Request a password reset email (`email`)                                 |
+| POST   | `/api/v1/password/reset`                  | Reset a password (`email`, `token`, `password`, `password_confirmation`) |
+| POST   | `/api/v1/email/verification-notification` | (Re)send the email verification link (`email`)                           |
+| GET    | `/api/v1/email/verify/{id}/{hash}`        | Verify an email address via the emailed link                             |
 
 Notes:
 
@@ -131,6 +131,43 @@ Notes:
 - Since `MAIL_MAILER=log` by default, reset/verification links are written to
   `storage/logs/app.log` instead of being emailed — copy the link/token from
   there when testing locally.
+
+## Sessions, cookies & cache
+
+In addition to the stateless `api` token guard, the framework ships
+Laravel-style session-based auth, cookie handling, and a pluggable cache
+layer (`symfony/cache` under the hood).
+
+| Method | URI              | Description                                              |
+| ------ | ---------------- | -------------------------------------------------------- |
+| POST   | `/api/v1/login`  | Log in (`email`, `password`) — sets a session cookie     |
+| POST   | `/api/v1/logout` | Log out — invalidates the session                        |
+| GET    | `/api/v1/me`     | Current authenticated user (requires the session cookie) |
+
+- **Sessions** — `VtPhp\Session\SessionManager` starts a `Session` per request
+  (bound into the container by the `StartSession` middleware), backed by a
+  `SessionStoreInterface` driver: `file` (default, `storage/framework/sessions/`,
+  serialized with `allowed_classes: false` to avoid PHP object-injection) or
+  `array` (non-persistent, tests/CLI only). Configure via `config/session.php`
+  / `SESSION_DRIVER`, `SESSION_LIFETIME`, `SESSION_COOKIE`, `SESSION_SECURE_COOKIE`,
+  `SESSION_SAME_SITE` env vars.
+- **Cookies** — outgoing cookies are queued via the `cookie()` helper
+  (`VtPhp\Cookie\CookieJar`) and attached to the response as `Set-Cookie`
+  headers by the `AddQueuedCookiesToResponse` middleware. Incoming cookies can
+  be read with `$request->cookie('name')` or `$psrRequest->getCookieParams()`.
+- **Auth guards** — `config/auth.php` now has a `web` guard (`driver: session`)
+  alongside the existing `api` guard. Use the `auth()` helper:
+  `auth('web')->attempt([...])`, `->user()`, `->check()`, `->logout()`. Protect
+  routes with the `Authenticate` middleware via the `#[Route(middleware: [...])]`
+  attribute parameter (see `AuthController::me()`).
+- **Cache** — the `cache()` helper (`VtPhp\Cache\CacheManager`) exposes
+  `get`/`put`/`has`/`forget`/`remember`/`flush`, resolving a PSR-16 store per
+  `config/cache.php`. Supported drivers: `array` (in-memory), `file`
+  (`storage/framework/cache/data`), and `redis`.
+- **Redis is an optional adapter, not a hard dependency** — `symfony/cache` is
+  always installed, but actually selecting `CACHE_DRIVER=redis` requires the
+  app to additionally install `ext-redis` or `predis/predis`. Configure the
+  connection via `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_CACHE_DB`.
 
 ## Database, seeding & Eloquent
 

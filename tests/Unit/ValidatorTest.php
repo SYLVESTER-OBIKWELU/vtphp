@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace VtPhp\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use VtPhp\Validation\Validator;
 use VtPhp\Exceptions\ValidationException;
+use VtPhp\Validation\Validator;
 
 final class ValidatorTest extends TestCase
 {

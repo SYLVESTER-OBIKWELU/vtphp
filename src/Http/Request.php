@@ -70,6 +70,13 @@ final class Request
         return $value !== '' ? $value : $default;
     }
 
+    public function cookie(string $key, ?string $default = null): ?string
+    {
+        $value = $this->psr->getCookieParams()[$key] ?? null;
+
+        return is_string($value) ? $value : $default;
+    }
+
     public function bearerToken(): ?string
     {
         $header = $this->header('Authorization');

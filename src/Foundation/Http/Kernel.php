@@ -8,8 +8,10 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use VtPhp\Exceptions\ExceptionHandler;
 use VtPhp\Foundation\Application;
+use VtPhp\Middleware\AddQueuedCookiesToResponse;
 use VtPhp\Middleware\Pipeline;
 use VtPhp\Middleware\RequestIdMiddleware;
+use VtPhp\Middleware\StartSession;
 use VtPhp\Routing\Router;
 
 final class Kernel
@@ -17,6 +19,8 @@ final class Kernel
     /** @var array<int, class-string> */
     protected array $middleware = [
         RequestIdMiddleware::class,
+        AddQueuedCookiesToResponse::class,
+        StartSession::class,
     ];
 
     public function __construct(

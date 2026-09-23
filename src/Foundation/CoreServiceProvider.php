@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace VtPhp\Foundation;
 
 use Psr\Log\LoggerInterface;
+use VtPhp\Auth\AuthManager;
+use VtPhp\Cache\CacheManager;
 use VtPhp\Config\Repository;
+use VtPhp\Cookie\CookieJar;
 use VtPhp\Database\DatabaseManager;
 use VtPhp\Database\EloquentManager;
 use VtPhp\Exceptions\ExceptionHandler;
@@ -14,6 +17,7 @@ use VtPhp\Logging\LogManager;
 use VtPhp\Mail\Mailer;
 use VtPhp\Routing\ControllerDispatcher;
 use VtPhp\Routing\Router;
+use VtPhp\Session\SessionManager;
 use VtPhp\View\BladeEngine;
 
 /**
@@ -74,11 +78,29 @@ final class CoreServiceProvider extends ServiceProvider
             fn (Application $app) => new Mailer($app->make(Repository::class), $app->make(LoggerInterface::class))
         );
 
+        $this->app->singleton(
+            CacheManager::class,
+            fn (Application $app) => new CacheManager($app->make(Repository::class))
+        );
+
+        $this->app->singleton(CookieJar::class, fn () => new CookieJar());
+
+        $this->app->singleton(
+            SessionManager::class,
+            fn (Application $app) => new SessionManager($app->make(Repository::class))
+        );
+
+        $this->app->singleton(
+            AuthManager::class,
+            fn (Application $app) => new AuthManager($app, $app->make(Repository::class))
+        );
+
         $this->app->make(EloquentManager::class)->boot();
 
         $this->app->alias('router', Router::class);
         $this->app->alias('db', DatabaseManager::class);
         $this->app->alias('view', BladeEngine::class);
         $this->app->alias('mailer', Mailer::class);
+        $this->app->alias('cache', CacheManager::class);
     }
 }

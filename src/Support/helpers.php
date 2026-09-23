@@ -106,3 +106,31 @@ if (!function_exists('now')) {
         return new \DateTimeImmutable('now', new \DateTimeZone((string) config('app.timezone', 'UTC')));
     }
 }
+
+if (!function_exists('cache')) {
+    function cache(): \VtPhp\Cache\CacheManager
+    {
+        return app(\VtPhp\Cache\CacheManager::class);
+    }
+}
+
+if (!function_exists('cookie')) {
+    function cookie(): \VtPhp\Cookie\CookieJar
+    {
+        return app(\VtPhp\Cookie\CookieJar::class);
+    }
+}
+
+if (!function_exists('session')) {
+    function session(): \VtPhp\Session\Session
+    {
+        return app(\VtPhp\Session\Session::class);
+    }
+}
+
+if (!function_exists('auth')) {
+    function auth(?string $guard = null): \VtPhp\Auth\GuardInterface
+    {
+        return app(\VtPhp\Auth\AuthManager::class)->guard($guard);
+    }
+}
