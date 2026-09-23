@@ -102,6 +102,36 @@ PSR Standards + Vendor Components (Symfony Routing/Console/Dotenv, Doctrine DBAL
 - **Logging** — `monolog/monolog` behind `Psr\Log\LoggerInterface`.
 - **CLI** — `symfony/console` behind the `forge` binary, with stub-based `make:*` generators (controllers, models, resources, middleware, migrations, seeders, mailables).
 
+## Sample API endpoints
+
+`routes/api.php` registers a sample `User` CRUD resource plus password-recovery
+and email-verification endpoints under the `/api/v1` prefix:
+
+| Method | URI                                       | Description                                   |
+|--------|--------------------------------------------|------------------------------------------------|
+| GET    | `/api/v1/users`                             | List users                                     |
+| POST   | `/api/v1/users`                             | Create a user (`name`, `email`, `password`, `password_confirmation`) |
+| GET    | `/api/v1/users/{id}`                        | Show a user                                    |
+| PATCH  | `/api/v1/users/{id}`                        | Update a user (`name`, `email` — both optional)|
+| DELETE | `/api/v1/users/{id}`                        | Delete a user (`204 No Content`)               |
+| POST   | `/api/v1/password/forgot`                   | Request a password reset email (`email`)       |
+| POST   | `/api/v1/password/reset`                    | Reset a password (`email`, `token`, `password`, `password_confirmation`) |
+| POST   | `/api/v1/email/verification-notification`  | (Re)send the email verification link (`email`)|
+| GET    | `/api/v1/email/verify/{id}/{hash}`          | Verify an email address via the emailed link   |
+
+Notes:
+
+- User creation requires a `password` (min 8 chars) confirmed via
+  `password_confirmation`, matching the `confirmed` validation rule.
+- `forgot()` and the verification-notification endpoint respond with the same
+  generic success message whether or not the email exists (or is already
+  verified), to avoid leaking account existence.
+- Reset tokens are single-use, hashed at rest (`password_reset_tokens` table),
+  and expire after 60 minutes.
+- Since `MAIL_MAILER=log` by default, reset/verification links are written to
+  `storage/logs/app.log` instead of being emailed — copy the link/token from
+  there when testing locally.
+
 ## Database, seeding & Eloquent
 
 `app/Models/User.php` is an Eloquent model (`Illuminate\Database\Eloquent\Model`),

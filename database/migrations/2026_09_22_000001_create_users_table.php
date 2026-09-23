@@ -14,6 +14,7 @@ return new class extends Migration {
         $table->addColumn('name', 'string', ['length' => 255]);
         $table->addColumn('email', 'string', ['length' => 255]);
         $table->addColumn('password', 'string', ['length' => 255, 'notnull' => false]);
+        $table->addColumn('email_verified_at', 'datetime', ['notnull' => false]);
         $table->addColumn('created_at', 'datetime', ['notnull' => false]);
         $table->addColumn('updated_at', 'datetime', ['notnull' => false]);
         $table->setPrimaryKey(['id']);

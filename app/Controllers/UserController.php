@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Requests\CreateUserRequest;
+use App\Requests\UpdateUserRequest;
 use App\Resources\UserResource;
 use App\Services\UserService;
+use VtPhp\Http\JsonResponse;
 use VtPhp\Http\Request;
 use VtPhp\Resources\ResourceCollection;
 use VtPhp\Routing\Attributes\Route;
@@ -35,5 +37,21 @@ final class UserController
         $user = $this->service->create(CreateUserRequest::fromRequest($request));
 
         return UserResource::make($user)->status(201);
+    }
+
+    #[Route(method: 'PATCH', path: '/users/{id}', name: 'users.update')]
+    public function update(int $id, Request $request): UserResource
+    {
+        $user = $this->service->update($id, UpdateUserRequest::fromRequest($request));
+
+        return UserResource::make($user);
+    }
+
+    #[Route(method: 'DELETE', path: '/users/{id}', name: 'users.destroy')]
+    public function destroy(int $id): JsonResponse
+    {
+        $this->service->delete($id);
+
+        return response()->noContent();
     }
 }

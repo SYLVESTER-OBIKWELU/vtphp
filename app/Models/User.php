@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $name
  * @property string $email
  * @property string|null $password
+ * @property \Illuminate\Support\Carbon|null $email_verified_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  */
@@ -21,4 +22,19 @@ final class User extends Model
 
     /** @var array<int, string> */
     protected $hidden = ['password'];
+
+    /** @var array<string, string> */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+
+    public function hasVerifiedEmail(): bool
+    {
+        return $this->email_verified_at !== null;
+    }
+
+    public function markEmailAsVerified(): bool
+    {
+        return $this->forceFill(['email_verified_at' => now()])->save();
+    }
 }

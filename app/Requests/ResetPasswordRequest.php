@@ -7,11 +7,11 @@ namespace App\Requests;
 use VtPhp\Http\Request;
 use VtPhp\Validation\Validator;
 
-final class CreateUserRequest
+final class ResetPasswordRequest
 {
     private function __construct(
-        public readonly string $name,
         public readonly string $email,
+        public readonly string $token,
         public readonly string $password,
     ) {
     }
@@ -19,11 +19,11 @@ final class CreateUserRequest
     public static function fromRequest(Request $request): self
     {
         $data = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email'],
+            'token' => ['required', 'string'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ])->validate();
 
-        return new self($data['name'], $data['email'], $data['password']);
+        return new self($data['email'], $data['token'], $data['password']);
     }
 }

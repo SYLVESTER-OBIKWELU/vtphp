@@ -7,23 +7,19 @@ namespace App\Requests;
 use VtPhp\Http\Request;
 use VtPhp\Validation\Validator;
 
-final class CreateUserRequest
+final class SendEmailVerificationRequest
 {
     private function __construct(
-        public readonly string $name,
         public readonly string $email,
-        public readonly string $password,
     ) {
     }
 
     public static function fromRequest(Request $request): self
     {
         $data = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
         ])->validate();
 
-        return new self($data['name'], $data['email'], $data['password']);
+        return new self($data['email']);
     }
 }

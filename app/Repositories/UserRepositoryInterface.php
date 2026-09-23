@@ -10,10 +10,19 @@ interface UserRepositoryInterface
 {
     public function find(int $id): ?User;
 
+    public function findByEmail(string $email): ?User;
+
     /**
      * @return array<int, User>
      */
     public function all(): array;
 
-    public function create(string $name, string $email): User;
+    public function create(string $name, string $email, ?string $password = null): User;
+
+    /**
+     * @param array<string, mixed> $attributes
+     */
+    public function update(User $user, array $attributes): User;
+
+    public function delete(User $user): void;
 }

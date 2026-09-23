@@ -110,6 +110,7 @@ final class Validator
             'min' => is_string($value) ? mb_strlen($value) >= (int) $param : (!is_numeric($value) || $value >= (int) $param),
             'in' => in_array((string) $value, explode(',', (string) $param), true),
             'date' => is_string($value) && strtotime($value) !== false,
+            'confirmed' => $value === ($this->data[$field.'_confirmation'] ?? null),
             default => true,
         };
 
@@ -132,6 +133,7 @@ final class Validator
             'min' => "The {$field} field must be at least {$param}.",
             'in' => "The selected {$field} is invalid.",
             'date' => "The {$field} field must be a valid date.",
+            'confirmed' => "The {$field} confirmation does not match.",
             default => "The {$field} field is invalid.",
         };
     }
