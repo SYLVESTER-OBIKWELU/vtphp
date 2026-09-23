@@ -1,349 +1,242 @@
-# VTPHP Framework - Virtual Tech PHP
+# VtPhp
 
-A powerful, modern PHP framework inspired by Laravel, featuring Eloquent-like ORM, Blade templating (.blade.php), service providers, collections, comprehensive CLI tools, and modern frontend stack with Vite + Tailwind CSS.
-
----
-
-## 🎯 Quick Navigation
-
-- **[📚 Full Documentation →](docs/index.md)** - Complete guides and tutorials
-- **[⚡ Quick Start →](docs/getting-started/QUICK_START.md)** - Get started in 5 minutes
-- **[📖 Complete Guide →](docs/VTPHP_COMPLETE_GUIDE.md)** - Everything you need to know
-- **[🔍 Quick Reference →](docs/QUICK_REFERENCE.md)** - Commands and snippets
-
----
-
-## ✨ Features
-
-✅ **MVC Architecture** - Clean separation of concerns  
-✅ **Eloquent-like ORM** - ActiveRecord pattern with query builder  
-✅ **Blade Templating** - .blade.php files with layouts, components, slots  
-✅ **Service Providers** - SDK and package integration support  
-✅ **Collections** - 40+ powerful array manipulation methods  
-✅ **RESTful Routing** - Resource routes with middleware (CORS, CSRF, Auth)  
-✅ **Database Migrations** - Version control for your database  
-✅ **Validation System** - 20+ built-in validation rules  
-✅ **Artisan CLI** - 95+ commands for rapid development  
-✅ **Beautiful Error Pages** - Laravel-like exception handler with stack traces  
-✅ **Vite + Tailwind CSS** - Modern frontend tooling with hot reload  
-✅ **Alpine.js** - Lightweight reactive framework included  
-✅ **Mail System** - PHPMailer integration  
-✅ **Logging** - Monolog with multiple channels  
-✅ **Cache** - File, Redis, Database drivers  
-✅ **Storage** - Flysystem for local/cloud storage  
-✅ **Events** - Event dispatcher system  
-✅ **Queue** - Background job processing
-
-## 📦 Installation & Setup
-
-### 1. Install PHP Dependencies
-
-```bash
-composer install
-```
-
-### 2. Install Node Dependencies (for Vite + Tailwind)
-
-```bash
-npm install
-```
-
-### 3. Environment Configuration
-
-```bash
-cp .env.example .env
-php artisan key:generate
-```
-
-Edit `.env` and configure your database:
-
-```env
-APP_NAME="VTPHP Framework"
-APP_ENV=development
-APP_DEBUG=true
-APP_KEY=your_generated_key_here
-
-DB_HOST=localhost
-DB_DATABASE=your_database_name
-DB_USERNAME=your_username
-DB_PASSWORD=your_password
-```
-
-### 4. Create Database
-
-Create a MySQL database:
-
-```sql
-CREATE DATABASE your_database_name;
-```
-
-### 5. Run Migrations
-
-```bash
-php artisan migrate
-```
-
-### 6. Build Frontend Assets
-
-**Development:**
-
-```bash
-npm run dev
-```
-
-**Production:**
-
-```bash
-npm run build
-```
-
-### 7. Start Development Server
-
-```bash
-php artisan serve
-```
-
-Visit: `http://localhost:8000`
-
-## 🚀 Quick Examples
-
-### Create a Model
-
-```bash
-php artisan make:model Post --migration
-```
-
-### Create a Controller
-
-```bash
-php artisan make:controller PostController --resource
-```
-
-### Create a Migration
-
-```bash
-php artisan make:migration create_posts_table
-```
-
-### Define Routes
-
-Edit `routes/web.php`:
+An independent, API-first PHP framework with a Laravel-inspired developer experience —
+built on PSR standards plus Symfony/Doctrine/Monolog components, with `illuminate/database`
+(Eloquent ORM), `eftec/bladeone` (Blade templating), and `symfony/mailer` (Mail) as
+opt-in, well-isolated dependencies for the features that benefit most from them.
 
 ```php
-$router->resource('/posts', 'App\Controller\PostController');
-```
-
-### Create API Routes
-
-Edit `routes/api.php`:
-
-```php
-$router->apiResource('/posts', 'App\Controller\Api\PostController');
-```
-
-## Common CLI Commands
-
-```bash
-# List all commands
-php artisan list
-
-# Make commands
-php artisan make:controller UserController --resource
-php artisan make:model User --migration
-php artisan make:migration create_users_table
-php artisan make:middleware CheckAge
-php artisan make:seeder DatabaseSeeder
-php artisan make:request StoreUserRequest
-php artisan make:provider CustomServiceProvider
-php artisan make:command SendEmails
-
-# Migration commands
-php artisan migrate
-php artisan migrate:rollback
-php artisan migrate:fresh
-php artisan migrate:status
-php artisan migrate:reset
-
-# Database commands
-php artisan db:seed
-php artisan db:wipe
-
-# Cache commands
-php artisan cache:clear
-php artisan view:clear
-php artisan config:clear
-php artisan config:cache
-
-# Utility commands
-php artisan route:list
-php artisan key:generate
-php artisan tinker
-
-# Development server
-php artisan serve
-php artisan serve --port=8080
-```
-
-## Using Collections
-
-```php
-$users = User::all();
-
-// Filter and transform
-$activeUsers = $users
-    ->where('status', 'active')
-    ->sortBy('name')
-    ->pluck('email');
-
-// Map data
-$userNames = collect($users)->map(function($user) {
-    return strtoupper($user->name);
-});
-
-// Group by attribute
-$byRole = $users->groupBy('role');
-```
-
-## Service Providers for SDK Integration
-
-Install any Composer package and integrate it:
-
-```bash
-composer require vendor/package
-```
-
-Create a service provider:
-
-```bash
-php artisan make:provider PackageServiceProvider
-```
-
-```php
-class PackageServiceProvider extends ServiceProvider
+#[Route(method: 'GET', path: '/users/{id}', name: 'users.show')]
+public function show(int $id): UserResource
 {
-    public function register()
-    {
-        $this->app->bind('package', function() {
-            return new Package(env('PACKAGE_KEY'));
-        });
-    }
+    return UserResource::make($this->service->find($id));
 }
 ```
 
-Register in `config/app.php`:
+## Documentation
+
+In-depth, per-topic guides live in [docs/](docs/README.md): routing,
+controllers, middleware, validation, resources, models, migrations, sessions
+& cookies & cache, authentication, views, mail, exceptions, the container,
+and the `forge` CLI.
+
+## Requirements
+
+- PHP ^8.4
+- ext-json, ext-mbstring, ext-pdo (+ the PDO driver for your database)
+
+## Getting started
+
+```powershell
+composer install
+copy .env.example .env
+php forge key:generate
+php forge migrate
+php forge db:seed
+php forge serve
+```
+
+Then visit `http://127.0.0.1:8000/health` or `http://127.0.0.1:8000/api/v1/users`.
+
+By default `DB_CONNECTION=sqlite`, so `php forge migrate` creates
+`database/database.sqlite` automatically — no external database server needed to
+try the framework. `php forge db:seed` populates it with two sample users via
+Eloquent. Swap in `mysql`/`pgsql` in `.env` for a real database.
+
+## Project layout
+
+```text
+app/            Your application code (Controllers, Services, Models, Resources, ...)
+bootstrap/      Application bootstrap (builds the container, config, providers)
+config/         Configuration files (env-driven)
+database/       Migrations
+public/         Web server document root (public/index.php is the front controller)
+routes/         Route definition files, loaded by App\Providers\RouteServiceProvider
+src/            The framework itself, namespace VtPhp\ (Container, HTTP, Routing, ...)
+stubs/          Templates used by `forge make:*` generators
+storage/        Logs, cache, and file storage (private/public disks)
+tests/          PHPUnit tests
+```
+
+`src/` is the framework core (`VtPhp\` namespace) and `app/` is your application
+(`App\` namespace) — both ship in this one repository for now. Per the framework's
+own "avoid overbuilding v1" principle, `src/` can be extracted into standalone
+Composer packages later (see the multi-package layout described in the blueprint)
+once the contracts stabilize.
+
+## `forge` CLI
+
+```powershell
+php forge about               # application info
+php forge serve               # run the PHP built-in server
+php forge route:list          # list all registered routes
+php forge key:generate        # generate APP_KEY
+
+php forge make:controller UserController
+php forge make:model Product
+php forge make:resource ProductResource
+php forge make:middleware EnsureTokenIsValid
+php forge make:migration create_products_table
+php forge make:seeder ProductSeeder
+php forge make:mail OrderShipped
+
+php forge migrate
+php forge migrate:status
+php forge migrate:rollback
+php forge db:seed
+```
+
+## Architecture
+
+```text
+Application Code (app/)
+        ↓
+VtPhp Framework (src/) — contracts, HTTP kernel, router, container, exceptions
+        ↓
+PSR Standards + Vendor Components (Symfony Routing/Console/Dotenv, Doctrine DBAL, Monolog)
+```
+
+- **Container** — `src/Container/Container.php`: PSR-11 container with reflection-based autowiring.
+- **HTTP** — PSR-7 (via `nyholm/psr7`) with a convenience `VtPhp\Http\Request` wrapper and a fluent `JsonResponse`.
+- **Routing** — `symfony/routing` underneath, plus a `#[Route]` attribute for controller-based routing.
+- **Middleware** — PSR-15 pipeline (`VtPhp\Middleware\Pipeline`).
+- **Exceptions** — centralized `ExceptionHandler` mapping exceptions to a structured `{"success":false,"error":{...}}` JSON envelope.
+- **Database** — `doctrine/dbal` behind `VtPhp\Database\DatabaseManager`, with a small file-based migration runner. `illuminate/database` (Eloquent) runs alongside it via `VtPhp\Database\EloquentManager`, reading the same `config/database.php`, for applications that want ActiveRecord-style models.
+- **Validation** — a dependency-free rule-string validator (`required|string|max:100`) that throws `ValidationException`.
+- **Resources** — `JsonResource` / `ResourceCollection` for shaping API output and pagination envelopes.
+- **Views** — `eftec/bladeone` behind `VtPhp\View\BladeEngine` for Blade-syntax templates (e.g. email bodies), resolved from `resources/views/`.
+- **Mail** — `symfony/mailer` behind `VtPhp\Mail\Mailer`, with a Laravel-style `Mailable` base class (`app/Mail/`) and a `log` transport for local dev (no SMTP server needed).
+- **Logging** — `monolog/monolog` behind `Psr\Log\LoggerInterface`.
+- **CLI** — `symfony/console` behind the `forge` binary, with stub-based `make:*` generators (controllers, models, resources, middleware, migrations, seeders, mailables).
+
+## Sample API endpoints
+
+`routes/api.php` registers a sample `User` CRUD resource plus password-recovery
+and email-verification endpoints under the `/api/v1` prefix:
+
+| Method | URI                                       | Description                                                              |
+| ------ | ----------------------------------------- | ------------------------------------------------------------------------ |
+| GET    | `/api/v1/users`                           | List users                                                               |
+| POST   | `/api/v1/users`                           | Create a user (`name`, `email`, `password`, `password_confirmation`)     |
+| GET    | `/api/v1/users/{id}`                      | Show a user                                                              |
+| PATCH  | `/api/v1/users/{id}`                      | Update a user (`name`, `email` — both optional)                          |
+| DELETE | `/api/v1/users/{id}`                      | Delete a user (`204 No Content`)                                         |
+| POST   | `/api/v1/password/forgot`                 | Request a password reset email (`email`)                                 |
+| POST   | `/api/v1/password/reset`                  | Reset a password (`email`, `token`, `password`, `password_confirmation`) |
+| POST   | `/api/v1/email/verification-notification` | (Re)send the email verification link (`email`)                           |
+| GET    | `/api/v1/email/verify/{id}/{hash}`        | Verify an email address via the emailed link                             |
+
+Notes:
+
+- User creation requires a `password` (min 8 chars) confirmed via
+  `password_confirmation`, matching the `confirmed` validation rule.
+- `forgot()` and the verification-notification endpoint respond with the same
+  generic success message whether or not the email exists (or is already
+  verified), to avoid leaking account existence.
+- Reset tokens are single-use, hashed at rest (`password_reset_tokens` table),
+  and expire after 60 minutes.
+- Since `MAIL_MAILER=log` by default, reset/verification links are written to
+  `storage/logs/app.log` instead of being emailed — copy the link/token from
+  there when testing locally.
+
+## Sessions, cookies & cache
+
+In addition to the stateless `api` token guard, the framework ships
+Laravel-style session-based auth, cookie handling, and a pluggable cache
+layer (`symfony/cache` under the hood).
+
+| Method | URI              | Description                                              |
+| ------ | ---------------- | -------------------------------------------------------- |
+| POST   | `/api/v1/login`  | Log in (`email`, `password`) — sets a session cookie     |
+| POST   | `/api/v1/logout` | Log out — invalidates the session                        |
+| GET    | `/api/v1/me`     | Current authenticated user (requires the session cookie) |
+
+- **Sessions** — `VtPhp\Session\SessionManager` starts a `Session` per request
+  (bound into the container by the `StartSession` middleware), backed by a
+  `SessionStoreInterface` driver: `file` (default, `storage/framework/sessions/`,
+  serialized with `allowed_classes: false` to avoid PHP object-injection) or
+  `array` (non-persistent, tests/CLI only). Configure via `config/session.php`
+  / `SESSION_DRIVER`, `SESSION_LIFETIME`, `SESSION_COOKIE`, `SESSION_SECURE_COOKIE`,
+  `SESSION_SAME_SITE` env vars.
+- **Cookies** — outgoing cookies are queued via the `cookie()` helper
+  (`VtPhp\Cookie\CookieJar`) and attached to the response as `Set-Cookie`
+  headers by the `AddQueuedCookiesToResponse` middleware. Incoming cookies can
+  be read with `$request->cookie('name')` or `$psrRequest->getCookieParams()`.
+- **Auth guards** — `config/auth.php` now has a `web` guard (`driver: session`)
+  alongside the existing `api` guard. Use the `auth()` helper:
+  `auth('web')->attempt([...])`, `->user()`, `->check()`, `->logout()`. Protect
+  routes with the `Authenticate` middleware via the `#[Route(middleware: [...])]`
+  attribute parameter (see `AuthController::me()`).
+- **Cache** — the `cache()` helper (`VtPhp\Cache\CacheManager`) exposes
+  `get`/`put`/`has`/`forget`/`remember`/`flush`, resolving a PSR-16 store per
+  `config/cache.php`. Supported drivers: `array` (in-memory), `file`
+  (`storage/framework/cache/data`), and `redis`.
+- **Redis is an optional adapter, not a hard dependency** — `symfony/cache` is
+  always installed, but actually selecting `CACHE_DRIVER=redis` requires the
+  app to additionally install `ext-redis` or `predis/predis`. Configure the
+  connection via `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_CACHE_DB`.
+
+## Database, seeding & Eloquent
+
+`app/Models/User.php` is an Eloquent model (`Illuminate\Database\Eloquent\Model`),
+and `app/Repositories/EloquentUserRepository.php` is the default binding for
+`UserRepositoryInterface`. Migrations still use the Doctrine DBAL-based
+`php forge migrate` runner (`database/migrations/`); seeders are plain classes
+extending `VtPhp\Database\Seeder` (`database/seeders/`):
+
+```powershell
+php forge make:migration create_products_table
+php forge make:seeder ProductSeeder
+php forge migrate
+php forge db:seed
+```
+
+## Blade views & Mail
+
+Render a Blade view (from `resources/views/`) with the `view()` helper:
 
 ```php
-'providers' => [
-    App\Providers\PackageServiceProvider::class,
-],
+echo view('emails.welcome', ['user' => $user]);
 ```
 
-## Blade Templating
-
-Create layouts and components:
+Define a Mailable and send it through the `Mailer`:
 
 ```php
-<!-- layouts/app.php -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>@yield('title')</title>
-</head>
-<body>
-    @yield('content')
-</body>
-</html>
+// app/Mail/WelcomeEmail.php
+final class WelcomeEmail extends Mailable
+{
+    public function __construct(private readonly User $user) {}
 
-<!-- home.php -->
-@extends('layouts.app')
+    public function build(): void
+    {
+        $this->to($this->user->email)
+            ->subject('Welcome to VtPhp!')
+            ->view('emails.welcome', ['user' => $this->user]);
+    }
+}
 
-@section('title', 'Home Page')
-
-@section('content')
-    <h1>Welcome!</h1>
-
-    @component('components.card')
-        @slot('title')
-            Featured Content
-        @endslot
-
-        This is the card body.
-    @endcomponent
-@endsection
+app(\VtPhp\Mail\Mailer::class)->send(new WelcomeEmail($user));
 ```
 
-## 📁 Folder Structure
+`MAIL_MAILER` defaults to `log` (writes the rendered email to the app log instead
+of sending it) so mail works out of the box with no SMTP server configured. Set
+it to `smtp` and configure `MAIL_HOST`/`MAIL_PORT`/`MAIL_USERNAME`/`MAIL_PASSWORD`
+in `.env` for real delivery.
 
+## What's not included yet
+
+Following the blueprint's own v0.1 → v1.0 roadmap, this build covers Phases 1–9
+(foundation, HTTP, routing, controllers, middleware, exceptions, database,
+validation, API resources) plus the CLI, Eloquent ORM, Blade templating, and
+mail. Authentication/authorization, cache, rate limiting, events, queues,
+filesystem drivers, and OpenAPI generation are the next phases — the config
+files and `.env` keys for most of them are already scaffolded in `config/` to
+make that work additive rather than a rewrite.
+
+## Testing
+
+```powershell
+composer test    # phpunit
+composer stan     # phpstan analyse
+composer fmt      # php-cs-fixer fix
 ```
-framework/
-├── app/
-│   ├── Controller/        # Your controllers
-│   ├── Middleware/        # Custom middleware
-│   ├── Models/            # Your models
-│   ├── Mail/              # Mail classes
-│   ├── Events/            # Event classes
-│   ├── Jobs/              # Queue jobs
-│   └── Policies/          # Authorization policies
-├── config/                # Configuration files
-├── core/                  # Framework core (View, Router, Model, etc.)
-├── database/
-│   ├── migrations/        # Database migrations
-│   └── factories/         # Model factories
-├── docs/                  # 📚 Complete Documentation
-├── public_html/           # Web root (index.php)
-│   └── build/             # Built assets (Vite)
-├── resources/
-│   ├── views/             # Blade templates (.blade.php)
-│   ├── css/               # Tailwind CSS
-│   └── js/                # Alpine.js + Axios
-├── routes/                # Route definitions
-│   ├── web.php            # Web routes
-│   └── api.php            # API routes
-├── storage/
-│   ├── app/               # File storage
-│   ├── cache/             # Cache files
-│   └── logs/              # Log files
-├── tests/                 # PHPUnit tests
-└── vendor/                # Composer dependencies
-```
-
-## 📚 Documentation
-
-All documentation is now located in the **`docs/`** folder:
-
-- **[Documentation Index](docs/index.md)** - Start here!
-- **[Quick Start Guide](docs/getting-started/QUICK_START.md)** - 5-minute setup
-- **[Complete Framework Guide](docs/VTPHP_COMPLETE_GUIDE.md)** - Everything you need
-- **[Quick Reference](docs/QUICK_REFERENCE.md)** - Commands and snippets
-- **[Blade Templating](docs/BLADE.md)** - Layouts, components, directives
-- **[Service Providers](docs/SERVICE_PROVIDERS.md)** - SDK integration
-- **[Collections](docs/COLLECTIONS.md)** - 40+ array methods
-- **[API Development](docs/API.md)** - REST API guide
-- **[Advanced Topics](docs/ADVANCED.md)** - Transactions, uploads, caching
-
-## 🎓 Next Steps
-
-1. **Read** [Quick Start Guide](docs/getting-started/QUICK_START.md) to get up and running
-2. **Follow** [CRUD Tutorial](docs/how-to-guides/crud-tutorial.md) to build your first app
-3. **Learn** [Blade Templating](docs/BLADE.md) for beautiful views
-4. **Explore** [Documentation Index](docs/index.md) for everything else
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📝 License
-
-This framework is open-sourced software licensed under the MIT license.
-
----
-
-**VTPHP Framework v1.0.0** - Built with ❤️ by Virtual Tech 4. Use collections for data manipulation 5. Check example controllers in `app/Controller/` 6. Study example views in `resource/views/`
-
-## Support
-
-For detailed documentation, see `docs/README.md`
-
-Happy coding! 🚀
