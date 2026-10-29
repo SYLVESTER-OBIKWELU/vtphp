@@ -128,8 +128,9 @@ See [Authentication](src/docs/authentication.md) for how it all works.
 
 ## Not available yet
 
-To save you looking: model factories, events, file storage drivers, config/route caching, and generated API documentation
-(OpenAPI) aren't built yet. The [design notes](src/docs/php_api_framework_blueprint.md)
+To save you looking: model factories, events, file storage drivers,
+config/route caching, and generated API documentation (OpenAPI) aren't built
+yet. The [design notes](src/docs/php_api_framework_blueprint.md)
 describe the roadmap.
 
 ## Development
