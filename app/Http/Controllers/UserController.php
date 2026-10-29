@@ -8,12 +8,14 @@ use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use VtPhp\Exceptions\AuthorizationException;
+use VtPhp\Auth\Access\AuthorizesRequests;
 use VtPhp\Http\JsonResponse;
 use VtPhp\Resources\ResourceCollection;
 
 final class UserController
 {
+    use AuthorizesRequests;
+
     public function index(): ResourceCollection
     {
         return UserResource::collection(User::query()->orderBy('id')->get());
@@ -38,9 +40,7 @@ final class UserController
 
     public function destroy(User $user): JsonResponse
     {
-        if ((string) auth()->id() !== (string) $user->id) {
-            throw new AuthorizationException('You may only delete your own account.');
-        }
+        $this->authorize('delete', $user); // UserPolicy::delete()
 
         $user->delete();
 

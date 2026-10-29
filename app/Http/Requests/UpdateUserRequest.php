@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\NormalizesEmail;
+use App\Models\User;
 use VtPhp\Http\FormRequest;
 
 final class UpdateUserRequest extends FormRequest
@@ -12,11 +13,13 @@ final class UpdateUserRequest extends FormRequest
     use NormalizesEmail;
 
     /**
-     * Users may only edit their own account.
+     * Checked before validation: UserPolicy::update() decides.
      */
     public function authorize(): bool
     {
-        return (string) auth()->id() === (string) $this->route('user');
+        $account = User::query()->find($this->route('user'));
+
+        return $account !== null && gate()->allows('update', $account);
     }
 
     public function rules(): array
