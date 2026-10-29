@@ -62,19 +62,28 @@ example, the built-in stack is ordered:
 ```php
 protected array $middleware = [
     RequestIdMiddleware::class,
+    HandleCors::class,
     AddQueuedCookiesToResponse::class,
     StartSession::class,
+    HandleExceptions::class,
 ];
 ```
 
-`AddQueuedCookiesToResponse` is listed _before_ `StartSession` so that, on
-the way back out, it can see the session cookie that `StartSession` queued.
+- `HandleCors` comes before `StartSession`, so CORS preflights are answered
+  without creating a session, and every response below it, including errors,
+  gets CORS headers.
+- `AddQueuedCookiesToResponse` is listed _before_ `StartSession` so that, on
+  the way back out, it can see the session cookie that `StartSession` queued.
+- `HandleExceptions` is last, so every middleware above it also wraps error
+  responses.
 
 ## Built-in middleware
 
 | Class                                         | Purpose                                                                      |
 | --------------------------------------------- | ---------------------------------------------------------------------------- |
 | `VtPhp\Middleware\RequestIdMiddleware`        | Assigns/propagates an `X-Request-ID` header.                                 |
+| `VtPhp\Middleware\HandleCors`                 | Applies the [CORS policy](cors.md) from `config/cors.php` (off by default).  |
+| `VtPhp\Middleware\HandleExceptions`           | Renders exceptions as JSON error responses inside the global stack.          |
 | `VtPhp\Middleware\AddQueuedCookiesToResponse` | Attaches cookies queued via `cookie()` as `Set-Cookie` headers.              |
 | `VtPhp\Middleware\StartSession`               | Starts/resumes the session and saves it after the response is produced.      |
 | `VtPhp\Middleware\Authenticate`               | Rejects the request with a 401 if the given guard has no authenticated user. |

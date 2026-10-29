@@ -7,6 +7,7 @@ these pages go deeper on each subsystem.
 - [Routing](routing.md)
 - [Controllers](controllers.md)
 - [Middleware](middleware.md)
+- [CORS](cors.md)
 - [Requests & validation](validation.md)
 - [Resources (API responses)](resources.md)
 - [Models & Eloquent](models.md)
