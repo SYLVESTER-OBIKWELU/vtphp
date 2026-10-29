@@ -4,29 +4,23 @@ declare(strict_types=1);
 
 return [
     'default' => [
-        'guard' => 'api',
+        'guard' => 'web',
     ],
 
+    // Supported drivers: "session".
     'guards' => [
-        'api' => [
-            'driver' => 'token',
-            'provider' => 'users',
-        ],
-
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
         ],
     ],
 
+    // Supported drivers: "eloquent". Omit a provider's config entirely to
+    // use a container-bound VtPhp\Auth\UserProviderInterface instead.
     'providers' => [
         'users' => [
-            'repository' => \App\Repositories\UserRepositoryInterface::class,
+            'driver' => 'eloquent',
+            'model' => \App\Models\User::class,
         ],
-    ],
-
-    'tokens' => [
-        // Minutes.
-        'expiration' => (int) env('AUTH_TOKEN_TTL', 60 * 24 * 30),
     ],
 ];

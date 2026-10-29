@@ -191,13 +191,23 @@ final class AuthTest extends TestCase
         $this->assertSame(200, $middleware->process($request, $handler)->getStatusCode());
     }
 
-    #[Group('defect')]
     public function test_the_shipped_default_guard_can_be_resolved(): void
     {
-        // config/auth.php makes `api` (driver: token) the default, but no token
-        // driver exists, so auth() with no argument throws.
         $config = new Repository(['auth' => require __DIR__.'/../../config/auth.php']);
 
         $this->assertInstanceOf(GuardInterface::class, (new AuthManager($this->app, $config))->guard());
+    }
+
+    public function test_an_unsupported_provider_driver_is_rejected(): void
+    {
+        $manager = new AuthManager($this->app, new Repository(['auth' => [
+            'guards' => ['web' => ['driver' => 'session', 'provider' => 'users']],
+            'providers' => ['users' => ['driver' => 'ldap']],
+        ]]));
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('ldap');
+
+        $manager->guard('web');
     }
 }
