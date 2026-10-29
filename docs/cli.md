@@ -13,8 +13,11 @@ php forge key:generate        # generate and write APP_KEY to .env
 
 ## Generators (`make:*`)
 
-Each generator writes a stub from `stubs/` into the appropriate `app/`
-subdirectory, filling in the class name and namespace.
+Each generator writes a stub from the framework's `src/stubs/` into the
+appropriate `app/` subdirectory, filling in the class name and namespace.
+Run `php forge stub:publish` to copy the stubs into your project's `stubs/`
+folder; generators use a published stub instead of the framework default,
+so you can customize them (`--force` re-publishes over your changes).
 
 ```powershell
 php forge make:controller ProductController

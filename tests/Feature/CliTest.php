@@ -19,7 +19,7 @@ final class CliTest extends FeatureTestCase
     private const COMMANDS = [
         'about', 'serve', 'key:generate', 'route:list', 'migrate', 'migrate:rollback', 'migrate:status',
         'make:controller', 'make:model', 'make:resource', 'make:migration', 'make:middleware',
-        'make:seeder', 'make:mail', 'make:request', 'db:seed',
+        'make:seeder', 'make:mail', 'make:request', 'stub:publish', 'db:seed',
     ];
 
     private ?\Closure $sandboxAutoloader = null;
@@ -35,14 +35,14 @@ final class CliTest extends FeatureTestCase
 
     /**
      * A throwaway copy of the project skeleton so generators and key:generate
-     * never touch the real app/, database/ or .env. Generated App\ classes
-     * are autoloaded from the sandbox.
+     * never touch the real app/, database/ or .env. It has no stubs/ folder,
+     * so generators use the framework's src/stubs unless a test publishes
+     * some. Generated App\ classes are autoloaded from the sandbox.
      */
     private function sandbox(): Application
     {
         $path = $this->tmp.DIRECTORY_SEPARATOR.'sandbox';
         TempDirectory::copy(self::BASE_PATH.'/config', $path.'/config');
-        TempDirectory::copy(self::BASE_PATH.'/stubs', $path.'/stubs');
 
         $this->sandboxAutoloader = static function (string $class) use ($path): void {
             $roots = ['App\\' => '/app/', 'Database\\Seeders\\' => '/database/seeders/'];
@@ -334,6 +334,29 @@ final class CliTest extends FeatureTestCase
         $this->assertCount(1, $this->body($this->request('GET', "/{$resource}", configure: $routes))['data']);
         $this->assertSame(204, $this->request('DELETE', "/{$resource}/{$note['id']}", configure: $routes)->getStatusCode());
         $this->assertErrorCode($this->request('GET', "/{$resource}/{$note['id']}", configure: $routes), 404, 'NOT_FOUND');
+    }
+
+    public function test_stub_publish_copies_stubs_and_published_stubs_take_precedence(): void
+    {
+        $app = $this->sandbox();
+        $stubCount = count(glob(self::BASE_PATH.'/src/stubs/*.stub') ?: []);
+
+        [$code, $output] = $this->forge(['command' => 'stub:publish'], $app);
+        $this->assertSame(0, $code);
+        $this->assertStringContainsString("Published {$stubCount} stub(s)", $output);
+        $this->assertCount($stubCount, glob($app->basePath('stubs/*.stub')) ?: []);
+
+        file_put_contents($app->basePath('stubs/controller.stub'), "<?php\n\nnamespace App\\Http\\Controllers;\n\n// customized\nfinal class {{ class }}\n{\n}\n");
+
+        [, $again] = $this->forge(['command' => 'stub:publish'], $app);
+        $this->assertStringContainsString('Published 0 stub(s)', $again, 'Customized stubs are not overwritten.');
+
+        $this->forge(['command' => 'make:controller', 'name' => 'Custom'], $app);
+        $this->assertStringContainsString('// customized', (string) file_get_contents($app->appPath('Http/Controllers/CustomController.php')));
+
+        [, $forced] = $this->forge(['command' => 'stub:publish', '--force' => true], $app);
+        $this->assertStringContainsString("Published {$stubCount} stub(s)", $forced);
+        $this->assertStringNotContainsString('// customized', (string) file_get_contents($app->basePath('stubs/controller.stub')));
     }
 
     public function test_key_generate(): void

@@ -28,6 +28,7 @@ final class Kernel
         \VtPhp\Console\Commands\MakeSeederCommand::class,
         \VtPhp\Console\Commands\MakeMailCommand::class,
         \VtPhp\Console\Commands\MakeRequestCommand::class,
+        \VtPhp\Console\Commands\StubPublishCommand::class,
         \VtPhp\Console\Commands\DbSeedCommand::class,
     ];
 

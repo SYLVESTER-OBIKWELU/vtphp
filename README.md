@@ -53,7 +53,7 @@ database/       Migrations
 public/         Web server document root (public/index.php is the front controller)
 routes/         Route definition files, loaded by App\Providers\RouteServiceProvider
 src/            The framework itself, namespace VtPhp\ (Container, HTTP, Routing, ...)
-stubs/          Templates used by `forge make:*` generators
+  stubs/        Templates used by `forge make:*` (override via `forge stub:publish`)
 storage/        Logs, cache, and file storage (private/public disks)
 tests/          PHPUnit tests
 ```

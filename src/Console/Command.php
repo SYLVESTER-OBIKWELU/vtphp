@@ -64,8 +64,8 @@ abstract class Command extends SymfonyCommand
     }
 
     /**
-     * Render stubs/{$stub} to {$relativePath} (relative to the base path),
-     * replacing each `{{ key }}` placeholder. Refuses to overwrite.
+     * Render a stub to {$relativePath} (relative to the base path), replacing
+     * each `{{ key }}` placeholder. Refuses to overwrite.
      *
      * @param array<string, string> $replacements
      */
@@ -79,7 +79,7 @@ abstract class Command extends SymfonyCommand
             return false;
         }
 
-        $contents = (string) file_get_contents($this->app->basePath("stubs/{$stub}"));
+        $contents = (string) file_get_contents($this->stubPath($stub));
 
         foreach ($replacements as $key => $value) {
             $contents = str_replace("{{ {$key} }}", $value, $contents);
@@ -91,6 +91,22 @@ abstract class Command extends SymfonyCommand
         $this->info("{$label} created: {$relativePath}");
 
         return true;
+    }
+
+    /**
+     * The app's published copy (stubs/{$stub}, see `forge stub:publish`)
+     * wins over the framework's own src/stubs/{$stub}.
+     */
+    protected function stubPath(string $stub): string
+    {
+        $published = $this->app->basePath("stubs/{$stub}");
+
+        return is_file($published) ? $published : self::frameworkStubsPath()."/{$stub}";
+    }
+
+    public static function frameworkStubsPath(): string
+    {
+        return dirname(__DIR__).'/stubs';
     }
 
     protected function exists(string $relativePath): bool
