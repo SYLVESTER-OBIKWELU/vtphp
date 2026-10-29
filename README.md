@@ -104,6 +104,8 @@ All guides live in [src/docs](src/docs/README.md), in learning order:
   **CORS** you can switch on from `.env`.
 - **Mail** with Blade templates. In development, emails go to the log
   instead of being sent.
+- **Queues:** background jobs with retries, delays and a worker
+  (`php forge queue:work`), stored in the database.
 - **The `forge` CLI:** `make:model -a` and other generators, migrations, a
   development server and more.
 - **400+ automated tests** and static analysis.
@@ -126,8 +128,7 @@ See [Authentication](src/docs/authentication.md) for how it all works.
 
 ## Not available yet
 
-To save you looking: model factories, queues and background jobs, events,
-file storage drivers, config/route caching, and generated API documentation
+To save you looking: model factories, events, file storage drivers, config/route caching, and generated API documentation
 (OpenAPI) aren't built yet. The [design notes](src/docs/php_api_framework_blueprint.md)
 describe the roadmap.
 

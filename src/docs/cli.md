@@ -55,6 +55,7 @@ the right namespace. They never overwrite a file that already exists.
 | `php forge make:migration create_posts_table` | `database/migrations/<date>_create_posts_table.php` |
 | `php forge make:seeder PostSeeder` | `database/seeders/PostSeeder.php` |
 | `php forge make:mail OrderShipped` | `app/Mail/OrderShipped.php` |
+| `php forge make:job SendInvoice` | `app/Jobs/SendInvoice.php` |
 | `php forge make:policy PostPolicy --model=Post` | `app/Policies/PostPolicy.php` (leave out `--model` for an empty policy) |
 
 ### Making a model with everything around it
@@ -140,6 +141,21 @@ php forge session:gc         # delete expired sessions now
 Expired sessions are also cleaned up automatically on a small share of
 requests. See [Sessions, cookies and cache](sessions-cookies-cache.md).
 
+## Queue commands
+
+```bash
+php forge queue:work         # run queued jobs until stopped (Ctrl+C)
+php forge queue:work --queue=emails,default --tries=3
+php forge queue:failed       # list jobs that failed every try
+php forge queue:retry 5      # put failed job 5 back on the queue (or: all)
+php forge queue:forget 5     # delete failed job 5
+php forge queue:flush        # delete all failed jobs
+php forge queue:clear        # delete jobs still waiting on the queue
+```
+
+`queue:work` options: `--queue`, `--tries`, `--sleep`, `--once`,
+`--stop-when-empty`, `--max-jobs` and `--max-time`. See [Queues](queues.md).
+
 ## API token commands
 
 ```bash
@@ -158,8 +174,8 @@ ask you to confirm by adding `--force`:
 php forge migrate --force
 ```
 
-This applies to `migrate`, `migrate:rollback`, `db:seed` and
-`key:generate`. Without `--force` you'll see:
+This applies to `migrate`, `migrate:rollback`, `db:seed`, `key:generate`,
+`queue:flush` and `queue:clear`. Without `--force` you'll see:
 
 ```text
 The application is in production (APP_ENV=production). Re-run with --force if you really mean it.

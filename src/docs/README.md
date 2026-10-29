@@ -30,6 +30,7 @@ whatever you need.
 - [Authorization](authorization.md): decide who may do what, with policies and gates.
 - [Sessions, cookies and cache](sessions-cookies-cache.md): remember things between requests.
 - [Mail](mail.md): send emails.
+- [Queues](queues.md): do slow work in the background.
 - [Views](views.md): templates for emails and pages.
 - [Middleware](middleware.md): run checks on many routes at once.
 - [CORS](cors.md): let your website or app on another domain call the API.
@@ -61,6 +62,8 @@ whatever you need.
 | **Migration** | A file that creates or changes database tables. |
 | **Middleware** | Code that runs before/after controllers for many routes. |
 | **Policy** | A class of rules about who may do what with a model. |
+| **Queue / job** | A to-do list of background work / one item of that work. |
+| **Pagination** | Sending a long list one page at a time. |
 | **`.env`** | Your private settings file. |
 
 The design notes behind the framework (goals, architecture and roadmap) are

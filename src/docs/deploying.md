@@ -259,7 +259,16 @@ with it. When a user reports a problem, search the log for their request ID.
 Set `MAIL_MAILER=smtp` and the `MAIL_*` values from your email provider. Use
 `MAIL_ENCRYPTION=tls` (port 587) or `ssl` (port 465). `MAIL_TIMEOUT`
 (10 seconds by default) stops a slow mail server from holding requests.
-Emails are sent during the request, because queues aren't available yet.
+With `QUEUE_CONNECTION=database`, emails sent with `queue()` (including the
+built-in reset and verification emails) go out from the queue worker, so
+keep one running.
+
+### The queue worker
+
+If you set `QUEUE_CONNECTION=database`, run `php forge queue:work` all the
+time with systemd or Supervisor, and restart it after every deploy so it
+picks up the new code. [Queues](queues.md#in-production) has a ready-made
+systemd file.
 
 ### Cleaning up old sessions
 
@@ -279,6 +288,7 @@ git pull
 composer install --no-dev --optimize-autoloader
 php forge migrate --force
 # restart PHP-FPM if opcache.validate_timestamps=0
+sudo systemctl restart myapi-worker   # if you run a queue worker
 ```
 
 ### What VtPhp doesn't provide yet
@@ -287,8 +297,6 @@ php forge migrate --force
   you'll write your own.
 - **Config and route caching.** Every request reads the config and route
   files. With OPcache on, that's fast, but there's no `config:cache` command.
-- **Queues and background jobs.** Emails and other slow work happen during
-  the request.
 - **Long-running servers** such as RoadRunner, FrankenPHP's worker mode or
   Swoole. VtPhp keeps some state between requests, so one user's login can
   leak into the next request on these servers. Use PHP-FPM or Apache's PHP
@@ -323,6 +331,7 @@ php forge migrate --force
 - [ ] Sessions, cache and rate limits on a shared store (`database` or `redis`)
 - [ ] `CORS_ALLOWED_ORIGINS` lists only your frontends
 - [ ] Real SMTP settings with `MAIL_ENCRYPTION`
+- [ ] `QUEUE_CONNECTION=database` and a queue worker kept running (or `sync`, on purpose)
 - [ ] OPcache on, logs rotated
 - [ ] Tests pass before you deploy: `composer test`
 

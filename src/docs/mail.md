@@ -133,8 +133,15 @@ $mailer->send(new OrderShipped($user, 'A-1001'));
 
 Outside a controller you can fetch it with `app(\VtPhp\Mail\Mailer::class)`.
 
-The email is sent right away, during the request. Sending in the background
-(queued mail) isn't available yet.
+The email is sent right away, during the request. To send it in the
+background instead, so the request doesn't wait for the mail server, use
+`queue()`:
+
+```php
+$mailer->queue(new OrderShipped($user, 'A-1001'));
+```
+
+See [Queues](queues.md#queued-email) for how that works.
 
 ## Sending real email
 
@@ -178,7 +185,10 @@ if (!$mailer->trySend(new OrderShipped($user, 'A-1001'))) {
 }
 ```
 
-The built-in password-reset and verification emails use `trySend()`. That
+`queue()` behaves the same way when `QUEUE_CONNECTION=sync`. With a real
+queue, the worker retries failed emails instead.
+
+The built-in password-reset and verification emails use `queue()`. That
 way, a mail outage can't reveal which addresses are registered (registered
 and unknown emails get the same reply).
 
@@ -206,7 +216,9 @@ available yet.
   `storage/logs/app.log`, or switch to `smtp`.
 - **A request hangs or fails while sending.** The mail server is slow or
   unreachable. Check `MAIL_HOST`, `MAIL_PORT` and `MAIL_ENCRYPTION`, and use
-  `trySend()` for emails that shouldn't break the request.
+  `queue()` or `trySend()` for emails that shouldn't break the request.
+- **Queued emails never arrive.** No worker is running. Start
+  `php forge queue:work` (see [Queues](queues.md)).
 - **Reset links point at the wrong site.** Set `FRONTEND_URL` to your
   frontend's address.
 

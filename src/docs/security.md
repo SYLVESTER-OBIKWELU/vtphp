@@ -209,7 +209,11 @@ These work automatically:
   find real accounts.
 - **No account guessing through email errors.** If sending a password-reset
   or verification email fails, the endpoint still gives the same reply. The
-  failure is written to your log instead. This uses `Mailer::trySend()`.
+  failure is written to your log instead. This uses `Mailer::queue()`. With a
+  queue worker it also means the reply doesn't take longer for registered
+  addresses.
+- **Signed queue jobs.** Queued jobs are signed with `APP_KEY`, and the
+  worker refuses to run a job that was changed in the database.
 - **Password length limit.** The password scrambler (bcrypt) ignores
   everything after 72 bytes, so sign-up and password reset reject longer
   passwords using the `max_bytes:72` rule. Accented letters and emoji count
