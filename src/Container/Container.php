@@ -107,6 +107,10 @@ class Container implements ContainerInterface
      */
     protected function build(string $concrete, array $parameters = []): mixed
     {
+        if (interface_exists($concrete)) {
+            throw new BindingResolutionException("Target [{$concrete}] is an interface with no binding. Bind a concrete class to it in a service provider.");
+        }
+
         if (!class_exists($concrete)) {
             throw new BindingResolutionException("Target class [{$concrete}] does not exist.");
         }
@@ -114,7 +118,7 @@ class Container implements ContainerInterface
         $reflector = new ReflectionClass($concrete);
 
         if (!$reflector->isInstantiable()) {
-            throw new BindingResolutionException("Target [{$concrete}] is not instantiable.");
+            throw new BindingResolutionException("Target [{$concrete}] is not instantiable (abstract class or private constructor) and has no binding.");
         }
 
         $constructor = $reflector->getConstructor();
@@ -149,6 +153,15 @@ class Container implements ContainerInterface
             $type = $parameter->getType();
 
             if ($type instanceof ReflectionNamedType && !$type->isBuiltin()) {
+                // An optional dependency (`?Foo $foo = null`) whose type can't
+                // be resolved at all falls back to its default. Failures deeper
+                // in a resolvable type's own dependencies still surface.
+                if (!$this->canResolve($type->getName()) && ($parameter->isDefaultValueAvailable() || $type->allowsNull())) {
+                    $results[] = $parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : null;
+
+                    continue;
+                }
+
                 $results[] = $this->make($type->getName());
 
                 continue;
@@ -174,6 +187,20 @@ class Container implements ContainerInterface
         }
 
         return $results;
+    }
+
+    /**
+     * Whether the type is bound, or is a concrete class the container can build.
+     */
+    private function canResolve(string $abstract): bool
+    {
+        $abstract = $this->aliases[$abstract] ?? $abstract;
+
+        if (isset($this->bindings[$abstract]) || isset($this->instances[$abstract])) {
+            return true;
+        }
+
+        return class_exists($abstract) && (new ReflectionClass($abstract))->isInstantiable();
     }
 
     /**

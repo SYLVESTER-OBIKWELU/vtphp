@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace VtPhp\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use VtPhp\Container\BindingResolutionException;
 use VtPhp\Container\Container;
@@ -52,6 +51,24 @@ final class WithPrimitive
 final class OptionalContract
 {
     public function __construct(public ?FakeContract $contract = null)
+    {
+    }
+}
+
+abstract class AbstractThing
+{
+}
+
+final class NullableNoDefault
+{
+    public function __construct(public ?FakeContract $contract)
+    {
+    }
+}
+
+final class OptionalBroken
+{
+    public function __construct(public ?NeedsContract $service = null)
     {
     }
 }
@@ -140,20 +157,20 @@ final class ContainerTest extends TestCase
         (new Container())->make(FakeContract::class);
     }
 
-    #[Group('defect')]
     public function test_an_unbound_interface_error_does_not_claim_the_interface_is_missing(): void
     {
-        // class_exists() is false for interfaces, so the message wrongly says the
-        // interface "does not exist" instead of "is not bound / not instantiable".
-        try {
-            (new Container())->make(FakeContract::class);
-        } catch (BindingResolutionException $e) {
-            $this->assertStringNotContainsString('does not exist', $e->getMessage());
+        $this->expectException(BindingResolutionException::class);
+        $this->expectExceptionMessage('Target ['.FakeContract::class.'] is an interface with no binding.');
 
-            return;
-        }
+        (new Container())->make(FakeContract::class);
+    }
 
-        $this->fail('Expected a BindingResolutionException.');
+    public function test_an_abstract_class_error_explains_it_needs_a_binding(): void
+    {
+        $this->expectException(BindingResolutionException::class);
+        $this->expectExceptionMessage('is not instantiable (abstract class or private constructor) and has no binding');
+
+        (new Container())->make(AbstractThing::class);
     }
 
     public function test_it_throws_for_an_unknown_class(): void
@@ -217,11 +234,27 @@ final class ContainerTest extends TestCase
         $this->assertSame([FakeImplementation::class, FakeImplementation::class], $seen, 'Singletons fire once, unrelated types never.');
     }
 
-    #[Group('defect')]
     public function test_an_optional_unbound_dependency_falls_back_to_its_default(): void
     {
-        // `?FakeContract $contract = null` should resolve to null when nothing
-        // is bound, but the container tries make() first and throws.
         $this->assertNull((new Container())->make(OptionalContract::class)->contract);
+        $this->assertNull((new Container())->make(NullableNoDefault::class)->contract, 'Nullable without a default resolves to null.');
+    }
+
+    public function test_an_optional_dependency_is_injected_when_bound(): void
+    {
+        $container = new Container();
+        $container->bind(FakeContract::class, FakeImplementation::class);
+
+        $this->assertInstanceOf(FakeImplementation::class, $container->make(OptionalContract::class)->contract);
+    }
+
+    public function test_a_broken_resolvable_optional_dependency_still_fails_loudly(): void
+    {
+        // BrokenService exists and is instantiable but needs an unbound
+        // interface; that real misconfiguration must not be hidden behind null.
+        $this->expectException(BindingResolutionException::class);
+        $this->expectExceptionMessage(FakeContract::class);
+
+        (new Container())->make(OptionalBroken::class);
     }
 }
