@@ -51,7 +51,15 @@ final class EloquentUserProvider implements UserProviderInterface
     public function validateCredentials(object $user, array $credentials): bool
     {
         $hash = $user instanceof Model ? $user->getAttribute('password') : null;
+        $password = (string) ($credentials['password'] ?? '');
 
-        return is_string($hash) && password_verify((string) ($credentials['password'] ?? ''), $hash);
+        if (!is_string($hash)) {
+            // Passwordless account: don't let a fast "no" reveal that.
+            TimingSafeCheck::burn($password);
+
+            return false;
+        }
+
+        return password_verify($password, $hash);
     }
 }

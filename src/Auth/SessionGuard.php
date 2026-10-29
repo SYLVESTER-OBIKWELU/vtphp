@@ -87,7 +87,15 @@ final class SessionGuard implements GuardInterface
     {
         $user = $this->provider->retrieveByCredentials($credentials);
 
-        if ($user === null || !$this->provider->validateCredentials($user, $credentials)) {
+        if ($user === null) {
+            // Take as long as a real check, so timing can't reveal whether
+            // the account exists.
+            TimingSafeCheck::burn((string) ($credentials['password'] ?? ''));
+
+            return false;
+        }
+
+        if (!$this->provider->validateCredentials($user, $credentials)) {
             return false;
         }
 
