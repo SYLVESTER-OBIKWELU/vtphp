@@ -44,6 +44,18 @@ final class HttpKernelTest extends FeatureTestCase
         $this->assertMatchesRegularExpression('/Max-Age=(7199|7200)\b/', $header);
     }
 
+    public function test_the_session_cookie_is_secure_on_https_behind_a_trusted_proxy(): void
+    {
+        $this->setEnvironment(['SESSION_SECURE_COOKIE' => '', 'TRUSTED_PROXIES' => '10.0.0.0/8']);
+        $viaProxy = ['X-Forwarded-Proto' => 'https', 'X-Forwarded-For' => '198.51.100.7'];
+
+        $trusted = $this->request('GET', '/health', null, $viaProxy, server: ['REMOTE_ADDR' => '10.0.0.2']);
+        $this->assertStringContainsString('; Secure', $trusted->getHeaderLine('Set-Cookie'));
+
+        $spoofed = $this->request('GET', '/health', null, $viaProxy, server: ['REMOTE_ADDR' => '203.0.113.9']);
+        $this->assertStringNotContainsString('; Secure', $spoofed->getHeaderLine('Set-Cookie'), 'Untrusted peers cannot claim HTTPS.');
+    }
+
     public function test_the_session_id_is_stable_across_requests(): void
     {
         $this->request('GET', '/health');

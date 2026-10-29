@@ -43,6 +43,9 @@ final class StartSession implements MiddlewareInterface
         $this->sessions->collectGarbageByLottery();
 
         $domain = $this->config->get('session.domain');
+        // An explicit SESSION_SECURE_COOKIE wins; otherwise mark the cookie
+        // Secure whenever the request came in over HTTPS.
+        $secure = $this->config->get('session.secure');
 
         $this->cookies->queue($this->cookies->make(
             name: $cookieName,
@@ -50,7 +53,7 @@ final class StartSession implements MiddlewareInterface
             minutes: (int) $this->config->get('session.lifetime', 120),
             path: (string) $this->config->get('session.path', '/'),
             domain: is_string($domain) ? $domain : null,
-            secure: (bool) $this->config->get('session.secure', false),
+            secure: is_bool($secure) ? $secure : $request->getUri()->getScheme() === 'https',
             httpOnly: true,
             sameSite: (string) $this->config->get('session.same_site', 'lax'),
         ));

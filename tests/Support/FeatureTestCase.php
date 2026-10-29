@@ -123,8 +123,9 @@ abstract class FeatureTestCase extends TestCase
      * @param array<string, mixed>|null $json
      * @param array<string, string> $headers
      * @param (\Closure(Application): void)|null $configure Runs after boot, before dispatch (e.g. to add a route).
+     * @param array<string, string> $server Server params; REMOTE_ADDR defaults to a documentation-range client IP.
      */
-    protected function request(string $method, string $uri, ?array $json = null, array $headers = [], ?\Closure $configure = null): ResponseInterface
+    protected function request(string $method, string $uri, ?array $json = null, array $headers = [], ?\Closure $configure = null, array $server = []): ResponseInterface
     {
         $app = $this->freshApp();
 
@@ -133,7 +134,7 @@ abstract class FeatureTestCase extends TestCase
         }
 
         $factory = new Psr17Factory();
-        $request = $factory->createServerRequest($method, 'http://localhost'.$uri);
+        $request = $factory->createServerRequest($method, 'http://localhost'.$uri, $server + ['REMOTE_ADDR' => '203.0.113.10']);
 
         parse_str((string) parse_url($uri, PHP_URL_QUERY), $query);
         $request = $request->withQueryParams($query)->withCookieParams($this->cookies);

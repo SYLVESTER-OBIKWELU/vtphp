@@ -14,6 +14,7 @@ use VtPhp\Middleware\HandleExceptions;
 use VtPhp\Middleware\Pipeline;
 use VtPhp\Middleware\RequestIdMiddleware;
 use VtPhp\Middleware\StartSession;
+use VtPhp\Middleware\TrustProxies;
 use VtPhp\Routing\Router;
 
 final class Kernel
@@ -27,6 +28,7 @@ final class Kernel
      * @var array<int, class-string>
      */
     protected array $middleware = [
+        TrustProxies::class,
         RequestIdMiddleware::class,
         HandleCors::class,
         AddQueuedCookiesToResponse::class,

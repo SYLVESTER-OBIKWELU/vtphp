@@ -16,7 +16,9 @@ return [
 
     'domain' => env('SESSION_DOMAIN'),
 
-    'secure' => (bool) env('SESSION_SECURE_COOKIE', false),
+    // true/false forces the cookie's Secure flag; leave unset to set it
+    // automatically on HTTPS requests (seen through trusted proxies).
+    'secure' => env('SESSION_SECURE_COOKIE'),
 
     'same_site' => env('SESSION_SAME_SITE', 'lax'),
 

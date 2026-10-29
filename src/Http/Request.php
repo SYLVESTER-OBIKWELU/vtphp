@@ -46,6 +46,25 @@ class Request
         return $this->psr;
     }
 
+    /**
+     * The client's IP: resolved through trusted proxies by TrustProxies,
+     * otherwise the direct peer (REMOTE_ADDR).
+     */
+    public function ip(): ?string
+    {
+        $ip = $this->psr->getAttribute('client_ip') ?? $this->psr->getServerParams()['REMOTE_ADDR'] ?? null;
+
+        return is_string($ip) && $ip !== '' ? $ip : null;
+    }
+
+    /**
+     * Whether the request arrived over HTTPS (as seen through trusted proxies).
+     */
+    public function isSecure(): bool
+    {
+        return $this->psr->getUri()->getScheme() === 'https';
+    }
+
     public function method(): string
     {
         return $this->psr->getMethod();
