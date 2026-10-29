@@ -154,6 +154,114 @@ Three things matter when your frontend runs in a browser:
 2. **Send the cookie.** Use `credentials: 'include'` with `fetch`.
 3. **On a different domain?** Switch on CORS. See [CORS](cors.md).
 
+## API tokens: for mobile apps, scripts and other servers
+
+Cookies work well in browsers, but a mobile app, a command-line script or
+another company's server usually can't use them. Those clients log in with an
+**API token** instead: a long secret string they send with every request,
+like a password made just for that device.
+
+### Getting a token
+
+Send your email and password, plus a name for the device:
+
+```http
+POST /api/v1/tokens
+Content-Type: application/json
+
+{"email": "ada@example.com", "password": "password", "device_name": "Ada's iPhone"}
+```
+
+```json
+{"data": {"token": "1|3f9a6c...e21b", "type": "Bearer", "abilities": ["*"]}}
+```
+
+Save that `token`. It's shown **only once**: VtPhp stores just a fingerprint
+(hash) of it, so nobody, not even you, can look it up later.
+
+### Using a token
+
+Send it in the `Authorization` header on every request:
+
+```http
+GET /api/v1/me
+Authorization: Bearer 1|3f9a6c...e21b
+```
+
+That's all: no cookie, no session. Tokens work on every route protected with
+`Authenticate::using('web', 'api')`, which accepts either a cookie or a token.
+The sample app's `/me` and `users` routes do.
+
+### Managing tokens
+
+| Method | Path | What it does |
+| --- | --- | --- |
+| `GET` | `/api/v1/tokens` | List your tokens (names, abilities, last used; never the secrets). |
+| `DELETE` | `/api/v1/tokens/{id}` | Revoke one of your tokens. |
+| `POST` | `/api/v1/logout` | Sent with a token, revokes that token. |
+
+A revoked token stops working immediately. Tokens are also refused once they
+expire, and deleting a user makes all their tokens useless.
+
+### Abilities: limiting what a token may do
+
+A token can be limited to certain actions, called **abilities**. Ask for them
+when creating the token:
+
+```json
+{"email": "ada@example.com", "password": "password", "device_name": "Reports script", "abilities": ["notes:read"]}
+```
+
+Then require an ability on a route with `RequireTokenAbility`, after
+`Authenticate`:
+
+```php
+// routes/api.php
+use VtPhp\Middleware\RequireTokenAbility;
+
+$router->post('/notes', [NoteController::class, 'store'], 'notes.store', [
+    Authenticate::using('web', 'api'),
+    RequireTokenAbility::using('notes:write'),
+]);
+```
+
+A token without `notes:write` gets `403 FORBIDDEN`. Tokens created without
+`abilities` get `["*"]`, which allows everything. Browser (cookie) logins
+aren't limited by abilities. In code, check with
+`$request->user()->tokenCan('notes:write')`.
+
+### Creating tokens in your own code
+
+Any model with the `HasApiTokens` trait (the sample `User` has it) can create
+tokens:
+
+```php
+$new = $user->createToken('Nightly import', ['notes:write'], new \DateTimeImmutable('+30 days'));
+
+$new->plainTextToken;  // give this to the client: "5|9b1e..."
+$new->accessToken;     // the stored record (name, abilities, expires_at...)
+
+$user->tokens()->get();          // all of a user's tokens
+$user->tokens()->delete();       // revoke them all
+```
+
+### Expiry and clean-up
+
+- Pass an expiry date to `createToken()` (third argument) for one token.
+- Set `AUTH_TOKEN_EXPIRATION` (in minutes) in `.env` to give every token a
+  maximum age.
+- Run `php forge tokens:prune` now and then (for example daily, from cron) to
+  delete expired tokens from the database.
+
+### Tokens and security
+
+- Treat a token like a password: send it only over HTTPS and never put it in
+  a URL.
+- Token requests don't carry the session cookie, so the CSRF rule above
+  doesn't apply to them.
+- Creating tokens shares the login rate limit (5 tries per minute per email
+  and address).
+
 ## What VtPhp does to keep logins safe
 
 You don't need to do anything for these. They're on by default.
@@ -213,6 +321,7 @@ See [Mail](mail.md) for how these emails are sent.
 
 'guards' => [
     'web' => ['driver' => 'session', 'provider' => 'users'],
+    'api' => ['driver' => 'token', 'provider' => 'users'],
 ],
 
 'providers' => [
@@ -220,8 +329,10 @@ See [Mail](mail.md) for how these emails are sent.
 ],
 ```
 
-- A **guard** decides *how* a user is recognised. `session` is the only
-  driver available.
+- A **guard** decides *how* a user is recognised: `session` (the cookie) or
+  `token` (an API token in the `Authorization` header). Use a specific one
+  with `auth('api')->user()`. Inside a route protected by `Authenticate`,
+  plain `auth()` uses whichever guard let the request in.
 - A **provider** decides *where* users come from. `eloquent` reads them
   through a model. To log in a different model, point `model` at it. It needs
   a `password` column holding a bcrypt hash.
@@ -255,9 +366,12 @@ public function register(): void
   for the number of seconds in `Retry-After`.
 - **"No application key is set" when sending verification emails.** Run
   `php forge key:generate`.
-- **Looking for API tokens** (bearer tokens for mobile apps or other
-  servers)? They aren't available yet. Logins work through the session cookie
-  only.
+- **A token gets 401 on a route.** That route uses plain
+  `Authenticate::class`, which only accepts cookies. Use
+  `Authenticate::using('web', 'api')`. Also check the header is exactly
+  `Authorization: Bearer <token>` and that the token hasn't expired or been
+  revoked.
+- **You lost a token.** It can't be recovered. Revoke it and create a new one.
 
 ## Next steps
 

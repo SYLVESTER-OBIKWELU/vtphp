@@ -140,7 +140,8 @@ then the route's own.
 
 | Middleware | What it does |
 | --- | --- |
-| `Authenticate` | Rejects guests with `401 UNAUTHENTICATED`. Always checks the default `web` login. |
+| `Authenticate` | Rejects guests with `401 UNAUTHENTICATED`. Plain `Authenticate::class` accepts the session cookie; `Authenticate::using('web', 'api')` also accepts API tokens. See [Authentication](authentication.md). |
+| `RequireTokenAbility` | Requires the API token to have an ability, e.g. `RequireTokenAbility::using('notes:write')` (`403` otherwise). |
 | `ThrottleRequests` | Rate limits. Use `ThrottleRequests::using('auth')` to pick a named limit from `config/rate_limiting.php`. See [Security](security.md#rate-limiting). |
 
 ### On every request (the global list)
@@ -242,8 +243,8 @@ built-in roles.
   never runs and nothing is returned.
 - **`Middleware [...] does not accept parameters.`** You wrote `Class:value`
   for a middleware that doesn't implement `ConfigurableMiddleware`.
-- **Expecting `Authenticate:api`.** `Authenticate` takes no parameters and
-  always uses the default `web` login; there is no token login yet.
+- **API tokens rejected with 401.** Plain `Authenticate::class` only accepts
+  the session cookie. Use `Authenticate::using('web', 'api')` for both.
 - **A global middleware's error comes back as a plain 500.** It's above
   `HandleExceptions`, so nothing turns its exceptions into JSON. Move it below.
 

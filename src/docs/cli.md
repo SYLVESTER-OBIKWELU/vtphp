@@ -138,6 +138,15 @@ php forge session:gc         # delete expired sessions now
 Expired sessions are also cleaned up automatically on a small share of
 requests. See [Sessions, cookies and cache](sessions-cookies-cache.md).
 
+## API token commands
+
+```bash
+php forge tokens:prune       # delete expired API tokens
+```
+
+Run it regularly, for example daily from cron. See
+[Authentication](authentication.md#api-tokens-for-mobile-apps-scripts-and-other-servers).
+
 ## Production safety: `--force`
 
 When `APP_ENV=production`, commands that change or destroy data stop and
