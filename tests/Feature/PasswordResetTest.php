@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace VtPhp\Tests\Feature;
 
 use App\Models\PasswordResetToken;
-use PHPUnit\Framework\Attributes\Group;
 use VtPhp\Tests\Support\FeatureTestCase;
 
 final class PasswordResetTest extends FeatureTestCase
@@ -31,9 +30,6 @@ final class PasswordResetTest extends FeatureTestCase
         return $match[1] ?? $this->fail('No token in the reset email.');
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     private function reset(string $token, string $password = 'new-password', string $email = 'ada@example.com'): \Psr\Http\Message\ResponseInterface
     {
         return $this->request('POST', '/api/v1/password/reset', [
@@ -117,16 +113,28 @@ final class PasswordResetTest extends FeatureTestCase
         $this->assertSame(['token', 'password'], array_keys($this->body($response)['error']['errors']));
     }
 
-    #[Group('defect')]
-    public function test_the_emailed_reset_link_can_be_opened(): void
+    public function test_the_emailed_link_opens_the_frontend_reset_page(): void
     {
-        // The email links to /api/v1/password/reset?token=…, a POST-only route,
-        // so clicking it in a mail client yields 405.
-        $this->requestReset();
+        $this->setEnvironment(['FRONTEND_URL' => 'https://app.example.com/']);
+
+        $token = $this->requestReset();
         preg_match('/href="([^"]+)"/', $this->logs->mails()[0]['body'], $match);
         $url = html_entity_decode($match[1]);
 
-        $this->assertNotSame(405, $this->request('GET', (string) parse_url($url, PHP_URL_PATH).'?'.parse_url($url, PHP_URL_QUERY))->getStatusCode());
+        $this->assertSame('https://app.example.com/reset-password', strtok($url, '?'), 'Links to the clickable frontend page, not the POST-only API route.');
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+        $this->assertSame(['token' => $token, 'email' => 'ada@example.com'], $query);
+
+        // The frontend then submits exactly those values to the API.
+        $this->assertSame(200, $this->reset($query['token'], email: $query['email'])->getStatusCode());
+    }
+
+    public function test_the_frontend_url_defaults_to_the_app_url(): void
+    {
+        $this->requestReset();
+        preg_match('/href="([^"]+)"/', $this->logs->mails()[0]['body'], $match);
+
+        $this->assertStringStartsWith('http://localhost/reset-password?token=', html_entity_decode($match[1]));
     }
 
     public function test_resetting_the_password_ends_existing_sessions(): void

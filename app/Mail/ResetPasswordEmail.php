@@ -17,9 +17,10 @@ final class ResetPasswordEmail extends Mailable
 
     public function build(): void
     {
-        $url = rtrim((string) config('app.url'), '/')
-            .'/api/v1/password/reset?token='.$this->token
-            .'&email='.rawurlencode((string) $this->user->email);
+        // The link opens the frontend's reset page, which collects the new
+        // password and POSTs it with the token to /api/v1/password/reset.
+        $url = rtrim((string) config('app.frontend_url'), '/')
+            .'/reset-password?'.http_build_query(['token' => $this->token, 'email' => $this->user->email]);
 
         $this->to((string) $this->user->email)
             ->subject('Reset your password')
