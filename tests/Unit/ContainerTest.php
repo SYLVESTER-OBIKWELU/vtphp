@@ -160,7 +160,7 @@ final class ContainerTest extends TestCase
     public function test_an_unbound_interface_error_does_not_claim_the_interface_is_missing(): void
     {
         $this->expectException(BindingResolutionException::class);
-        $this->expectExceptionMessage('Target ['.FakeContract::class.'] is an interface with no binding.');
+        $this->expectExceptionMessageIsOrContains('Target ['.FakeContract::class.'] is an interface with no binding.');
 
         (new Container())->make(FakeContract::class);
     }
@@ -168,7 +168,7 @@ final class ContainerTest extends TestCase
     public function test_an_abstract_class_error_explains_it_needs_a_binding(): void
     {
         $this->expectException(BindingResolutionException::class);
-        $this->expectExceptionMessage('is not instantiable (abstract class or private constructor) and has no binding');
+        $this->expectExceptionMessageIsOrContains('is not instantiable (abstract class or private constructor) and has no binding');
 
         (new Container())->make(AbstractThing::class);
     }
@@ -176,7 +176,7 @@ final class ContainerTest extends TestCase
     public function test_it_throws_for_an_unknown_class(): void
     {
         $this->expectException(BindingResolutionException::class);
-        $this->expectExceptionMessage('does not exist');
+        $this->expectExceptionMessageIsOrContains('does not exist');
 
         (new Container())->make('App\\DoesNotExist');
     }
@@ -184,7 +184,7 @@ final class ContainerTest extends TestCase
     public function test_it_throws_for_an_unresolvable_primitive(): void
     {
         $this->expectException(BindingResolutionException::class);
-        $this->expectExceptionMessage('Unresolvable dependency $name');
+        $this->expectExceptionMessageIsOrContains('Unresolvable dependency $name');
 
         (new Container())->make(WithPrimitive::class);
     }
@@ -253,7 +253,7 @@ final class ContainerTest extends TestCase
         // BrokenService exists and is instantiable but needs an unbound
         // interface; that real misconfiguration must not be hidden behind null.
         $this->expectException(BindingResolutionException::class);
-        $this->expectExceptionMessage(FakeContract::class);
+        $this->expectExceptionMessageIsOrContains(FakeContract::class);
 
         (new Container())->make(OptionalBroken::class);
     }

@@ -104,7 +104,7 @@ final class DatabaseTest extends TestCase
         file_put_contents($this->migrations.'/2026_01_01_000009_broken.php', '<?php return 42;');
 
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('must return a Migration instance');
+        $this->expectExceptionMessageIsOrContains('must return a Migration instance');
 
         $this->migrator()->run();
     }

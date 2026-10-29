@@ -135,7 +135,7 @@ final class ValidatorTest extends TestCase
     public function test_an_unknown_rule_fails_loudly(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unknown validation rule [requird] on field [field].');
+        $this->expectExceptionMessageIsOrContains('Unknown validation rule [requird] on field [field].');
 
         Validator::make(['field' => ''], ['field' => 'requird'])->passes();
     }

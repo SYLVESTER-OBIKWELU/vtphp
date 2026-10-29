@@ -70,7 +70,7 @@ final class UrlSignerTest extends TestCase
     public function test_signing_requires_an_application_key(): void
     {
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('key:generate');
+        $this->expectExceptionMessageIsOrContains('key:generate');
 
         $this->signer('')->sign('/files/9');
     }

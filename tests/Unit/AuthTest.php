@@ -185,7 +185,7 @@ final class AuthTest extends TestCase
     public function test_manager_rejects_unsupported_drivers(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('carrier-pigeon');
+        $this->expectExceptionMessageIsOrContains('carrier-pigeon');
 
         $this->manager()->guard('weird');
     }
@@ -228,7 +228,7 @@ final class AuthTest extends TestCase
         ]]));
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('ldap');
+        $this->expectExceptionMessageIsOrContains('ldap');
 
         $manager->guard('web');
     }

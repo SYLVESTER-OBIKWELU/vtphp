@@ -97,7 +97,7 @@ final class RateLimiterTest extends TestCase
     public function test_parameters_are_rejected_by_middleware_that_does_not_accept_them(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('does not accept parameters');
+        $this->expectExceptionMessageIsOrContains('does not accept parameters');
 
         (new Pipeline(new Container()))
             ->send((new Psr17Factory())->createServerRequest('GET', '/'))
