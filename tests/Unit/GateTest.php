@@ -61,6 +61,19 @@ final class AdminFirstPolicy
     }
 }
 
+final class StrictBeforePolicy
+{
+    public function before(GateUser $user, string $ability): ?bool
+    {
+        return $user->admin ? true : null;
+    }
+
+    public function view(GateUser $user, GateNote $note): bool
+    {
+        return false;
+    }
+}
+
 final class GateTest extends TestCase
 {
     private function gate(?GateUser $user): Gate
@@ -132,6 +145,15 @@ final class GateTest extends TestCase
         $gate->policy(GateNote::class, AdminFirstPolicy::class);
         $this->assertTrue($gate->allows('delete', new GateNote(99)), "The policy's before() lets admins through.");
         $this->assertFalse($gate->forUser(new GateUser(2))->allows('delete', new GateNote(2)), 'Non-admins fall through to delete().');
+    }
+
+    public function test_a_policy_before_that_requires_a_user_is_skipped_for_guests(): void
+    {
+        $gate = new Gate(new Container(), static fn (): ?object => null);
+        $gate->policy(GateNote::class, StrictBeforePolicy::class);
+
+        $this->assertFalse($gate->allows('view', new GateNote(1)));
+        $this->assertTrue($gate->forUser(new GateUser(1, admin: true))->allows('view', new GateNote(1)));
     }
 
     public function test_for_user_checks_someone_else_without_changing_the_gate(): void

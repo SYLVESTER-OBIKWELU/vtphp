@@ -141,7 +141,7 @@ final class Gate
             array_shift($arguments);
         }
 
-        if (method_exists($policy, 'before')) {
+        if (method_exists($policy, 'before') && ($user !== null || $this->acceptsGuests([$policy, 'before']))) {
             $result = $policy->before($user, $ability);
 
             if ($result !== null) {
@@ -166,15 +166,21 @@ final class Gate
      */
     private function callIfUserAllowed(\Closure $callback, ?object $user, array $arguments): bool
     {
-        if ($user === null) {
-            $first = (new \ReflectionFunction($callback))->getParameters()[0] ?? null;
-
-            if ($first !== null && !$first->allowsNull()) {
-                return false;
-            }
+        if ($user === null && !$this->acceptsGuests($callback)) {
+            return false;
         }
 
         return (bool) $callback($user, ...$arguments);
+    }
+
+    /**
+     * @param callable $callback
+     */
+    private function acceptsGuests(callable $callback): bool
+    {
+        $first = (new \ReflectionFunction(\Closure::fromCallable($callback)))->getParameters()[0] ?? null;
+
+        return $first === null || $first->allowsNull();
     }
 
     private function policyFor(mixed $target): ?object
