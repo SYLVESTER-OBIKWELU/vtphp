@@ -1,0 +1,45 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers;
+
+use VtPhp\Http\JsonResponse;
+use VtPhp\Http\Request;
+
+final class {{ class }}
+{
+    /**
+     * @return array<int, mixed>
+     */
+    public function index(): array
+    {
+        return [];
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        return response()->json([], 201);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function show(string ${{ parameter }}): array
+    {
+        return [];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function update(Request $request, string ${{ parameter }}): array
+    {
+        return [];
+    }
+
+    public function destroy(string ${{ parameter }}): JsonResponse
+    {
+        return response()->noContent();
+    }
+}

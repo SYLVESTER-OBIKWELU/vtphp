@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace VtPhp\Routing;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use VtPhp\Container\Container;
@@ -70,8 +71,10 @@ final class ControllerDispatcher
         foreach ($function->getParameters() as $parameter) {
             $type = $parameter->getType();
             $name = $parameter->getName();
+            // `BlogPost $blogPost` also binds to apiResource's `{blog_post}` segment.
+            $segment = array_key_exists($name, $params) ? $name : Str::snake($name);
 
-            if (!$type instanceof \ReflectionNamedType || $type->isBuiltin() || !array_key_exists($name, $params)) {
+            if (!$type instanceof \ReflectionNamedType || $type->isBuiltin() || !array_key_exists($segment, $params)) {
                 continue;
             }
 
@@ -81,7 +84,7 @@ final class ControllerDispatcher
                 continue;
             }
 
-            $params[$name] = $this->resolveModel($class, $params[$name]);
+            $params[$name] = $this->resolveModel($class, $params[$segment]);
         }
 
         return $params;

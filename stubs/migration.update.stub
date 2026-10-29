@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Database\Schema\Blueprint;
+use VtPhp\Database\Migrations\Migration;
+use VtPhp\Database\Schema;
+
+return new class extends Migration {
+    public function up(): void
+    {
+        Schema::table('{{ table }}', function (Blueprint $table): void {
+            //
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('{{ table }}', function (Blueprint $table): void {
+            //
+        });
+    }
+};

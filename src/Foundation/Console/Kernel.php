@@ -27,6 +27,7 @@ final class Kernel
         \VtPhp\Console\Commands\MakeMiddlewareCommand::class,
         \VtPhp\Console\Commands\MakeSeederCommand::class,
         \VtPhp\Console\Commands\MakeMailCommand::class,
+        \VtPhp\Console\Commands\MakeRequestCommand::class,
         \VtPhp\Console\Commands\DbSeedCommand::class,
     ];
 

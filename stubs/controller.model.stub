@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers;
+
+{{ imports }}
+
+final class {{ class }}
+{
+{{ indexMethod }}
+
+    public function store({{ storeRequest }} $request): {{ storeReturnType }}
+    {
+        ${{ variable }} = {{ model }}::query()->create({{ storeData }});
+
+        return {{ storeReturn }};
+    }
+
+    public function show({{ model }} ${{ variable }}): {{ returnType }}
+    {
+        return {{ wrap }};
+    }
+
+    public function update({{ updateRequest }} $request, {{ model }} ${{ variable }}): {{ returnType }}
+    {
+        ${{ variable }}->update({{ updateData }});
+
+        return {{ wrap }};
+    }
+
+    public function destroy({{ model }} ${{ variable }}): JsonResponse
+    {
+        ${{ variable }}->delete();
+
+        return response()->noContent();
+    }
+}

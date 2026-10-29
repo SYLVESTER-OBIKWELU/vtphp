@@ -4,31 +4,60 @@ declare(strict_types=1);
 
 namespace VtPhp\Console\Commands;
 
+use Illuminate\Support\Str;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use VtPhp\Console\Command;
 
+/**
+ * Like Laravel, the table is inferred from the name when not given:
+ *
+ *     create_posts_table          Schema::create('posts', …)
+ *     add_slug_to_posts_table     Schema::table('posts', …)
+ *     anything_else               empty up()/down()
+ */
 #[AsCommand(name: 'make:migration', description: 'Create a new migration file')]
 final class MakeMigrationCommand extends Command
 {
     protected function configure(): void
     {
-        $this->addArgument('name', InputArgument::REQUIRED, 'The migration name, e.g. create_users_table');
+        $this->addArgument('name', InputArgument::REQUIRED, 'The migration name, e.g. create_posts_table');
+        $this->addOption('create', null, InputOption::VALUE_REQUIRED, 'The table to be created');
+        $this->addOption('table', null, InputOption::VALUE_REQUIRED, 'The table to migrate');
     }
 
     protected function handle(): int
     {
-        $name = (string) $this->input->getArgument('name');
-        $fileName = date('Y_m_d_His')."_{$name}.php";
-        $path = $this->app->databasePath("migrations/{$fileName}");
+        $name = Str::snake(trim((string) $this->input->getArgument('name')));
 
-        $stub = (string) file_get_contents($this->app->basePath('stubs/migration.stub'));
+        if (glob($this->app->databasePath("migrations/*_{$name}.php")) !== []) {
+            $this->error("A {$name} migration already exists.");
 
-        @mkdir(dirname($path), 0777, true);
-        file_put_contents($path, $stub);
+            return self::FAILURE;
+        }
 
-        $this->info("Migration created: database/migrations/{$fileName}");
+        $create = $this->input->getOption('create');
+        $table = $this->input->getOption('table');
 
-        return self::SUCCESS;
+        if (!is_string($create) && !is_string($table)) {
+            if (preg_match('/^create_(\w+)_table$/', $name, $match) === 1) {
+                $create = $match[1];
+            } elseif (preg_match('/_(?:to|from|in)_(\w+)_table$/', $name, $match) === 1) {
+                $table = $match[1];
+            }
+        }
+
+        [$stub, $replacements] = match (true) {
+            is_string($create) => ['migration.create.stub', ['table' => $create]],
+            is_string($table) => ['migration.update.stub', ['table' => $table]],
+            default => ['migration.stub', []],
+        };
+
+        $file = date('Y_m_d_His')."_{$name}.php";
+
+        return $this->generate($stub, "database/migrations/{$file}", $replacements, 'Migration')
+            ? self::SUCCESS
+            : self::FAILURE;
     }
 }

@@ -26,6 +26,7 @@ final class RouteModelBindingTest extends FeatureTestCase
             $router->get('/bound/{user}', fn (User $user): array => ['email' => $user->email]);
             $router->get('/bound/{user}/raw/{note}', fn (User $user, string $note): array => [$user->name, $note]);
             $router->get('/unbound/{id}', fn (int $id): array => ['id' => $id]);
+            $router->get('/snake/{blog_author}', fn (User $blogAuthor): array => ['email' => $blogAuthor->email]);
             $router->get('/find-or-fail/{id}', fn (int $id): array => User::query()->findOrFail($id)->toArray());
         };
     }
@@ -42,6 +43,12 @@ final class RouteModelBindingTest extends FeatureTestCase
     {
         $this->assertSame(['Ada', 'hello'], $this->body($this->request('GET', "/bound/{$this->ada->id}/raw/hello", configure: $this->routes())));
         $this->assertSame(['id' => 7], $this->body($this->request('GET', '/unbound/7', configure: $this->routes())), 'Non-model params are untouched.');
+    }
+
+    public function test_a_camel_case_parameter_binds_to_a_snake_case_segment(): void
+    {
+        // apiResource('blog-authors') names the segment {blog_author}; controllers say $blogAuthor.
+        $this->assertSame(['email' => 'ada@example.com'], $this->body($this->request('GET', "/snake/{$this->ada->id}", configure: $this->routes())));
     }
 
     public function test_a_missing_model_is_a_404(): void

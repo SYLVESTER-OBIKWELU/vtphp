@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace VtPhp\Console\Commands;
 
+use Illuminate\Support\Str;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use VtPhp\Console\Command;
-use VtPhp\Support\Str;
 
 #[AsCommand(name: 'make:resource', description: 'Create a new API resource class')]
 final class MakeResourceCommand extends Command
@@ -15,32 +16,19 @@ final class MakeResourceCommand extends Command
     protected function configure(): void
     {
         $this->addArgument('name', InputArgument::REQUIRED, 'The resource name');
+        $this->addOption('model', 'm', InputOption::VALUE_REQUIRED, 'The Eloquent model the resource wraps');
     }
 
     protected function handle(): int
     {
         $name = Str::studly((string) $this->input->getArgument('name'));
+        $name = str_ends_with($name, 'Resource') ? $name : $name.'Resource';
+        $model = $this->input->getOption('model');
 
-        if (!str_ends_with($name, 'Resource')) {
-            $name .= 'Resource';
-        }
+        $generated = is_string($model) && $model !== ''
+            ? $this->generate('resource.model.stub', "app/Http/Resources/{$name}.php", ['class' => $name, 'model' => Str::studly($model)], "Resource {$name}")
+            : $this->generate('resource.stub', "app/Http/Resources/{$name}.php", ['class' => $name], "Resource {$name}");
 
-        $path = $this->app->appPath("Resources/{$name}.php");
-
-        if (is_file($path)) {
-            $this->error("Resource {$name} already exists.");
-
-            return self::FAILURE;
-        }
-
-        $stub = (string) file_get_contents($this->app->basePath('stubs/resource.stub'));
-        $contents = str_replace('{{ class }}', $name, $stub);
-
-        @mkdir(dirname($path), 0777, true);
-        file_put_contents($path, $contents);
-
-        $this->info("Resource created: app/Resources/{$name}.php");
-
-        return self::SUCCESS;
+        return $generated ? self::SUCCESS : self::FAILURE;
     }
 }
