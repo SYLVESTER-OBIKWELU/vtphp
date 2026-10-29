@@ -30,11 +30,9 @@ abstract class Command extends SymfonyCommand
     public function __construct(protected Application $app)
     {
         parent::__construct();
-    }
 
-    protected function configure(): void
-    {
-        if ($this->destructive) {
+        // Added after configure() so a subclass's own configure() can't drop it.
+        if ($this->destructive && !$this->getDefinition()->hasOption('force')) {
             $this->addOption('force', null, InputOption::VALUE_NONE, 'Run even when APP_ENV=production');
         }
     }
