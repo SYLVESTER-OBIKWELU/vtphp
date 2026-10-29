@@ -7,6 +7,7 @@ namespace VtPhp\Middleware;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use VtPhp\Auth\AuthManager;
 use VtPhp\Cache\RateLimiter;
 use VtPhp\Config\Repository;
 use VtPhp\Exceptions\TooManyRequestsHttpException;
@@ -90,6 +91,23 @@ final class ThrottleRequests implements ConfigurableMiddleware
     }
 
     /**
+     * The signed-in user under any configured guard (session or token), so
+     * token clients get their own bucket too. This runs before Authenticate.
+     */
+    private function userId(): ?string
+    {
+        $auth = app(AuthManager::class);
+
+        foreach ($auth->guardNames() as $guard) {
+            if (($id = $auth->guard($guard)->id()) !== null) {
+                return $guard.':'.$id;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Who the limit applies to:
      * - "ip": the client IP (see TrustProxies);
      * - "user": the signed-in user's id, falling back to the IP for guests;
@@ -102,7 +120,7 @@ final class ThrottleRequests implements ConfigurableMiddleware
         $ip = $request->ip() ?? 'unknown';
 
         return match ($by) {
-            'user' => ($id = auth()->id()) !== null ? 'user:'.$id : 'ip:'.$ip,
+            'user' => ($id = $this->userId()) !== null ? 'user:'.$id : 'ip:'.$ip,
             'ip+email' => 'ip:'.$ip.'|email:'.mb_strtolower(trim((string) (is_scalar($email = $request->input('email')) ? $email : ''))),
             default => 'ip:'.$ip,
         };

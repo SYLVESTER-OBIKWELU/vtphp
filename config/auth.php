@@ -7,10 +7,15 @@ return [
         'guard' => 'web',
     ],
 
-    // Supported drivers: "session".
+    // Supported drivers: "session" (cookie login) and "token" (API tokens sent
+    // as "Authorization: Bearer ...", see VtPhp\Auth\HasApiTokens).
     'guards' => [
         'web' => [
             'driver' => 'session',
+            'provider' => 'users',
+        ],
+        'api' => [
+            'driver' => 'token',
             'provider' => 'users',
         ],
     ],
@@ -22,5 +27,11 @@ return [
             'driver' => 'eloquent',
             'model' => \App\Models\User::class,
         ],
+    ],
+
+    'tokens' => [
+        // Maximum token age in minutes, on top of each token's own expiry.
+        // Empty = tokens last until revoked (or their own expires_at).
+        'expiration' => env('AUTH_TOKEN_EXPIRATION'),
     ],
 ];

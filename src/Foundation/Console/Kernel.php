@@ -31,6 +31,7 @@ final class Kernel
         \VtPhp\Console\Commands\StubPublishCommand::class,
         \VtPhp\Console\Commands\CacheClearCommand::class,
         \VtPhp\Console\Commands\SessionGcCommand::class,
+        \VtPhp\Console\Commands\TokensPruneCommand::class,
         \VtPhp\Console\Commands\DbSeedCommand::class,
     ];
 

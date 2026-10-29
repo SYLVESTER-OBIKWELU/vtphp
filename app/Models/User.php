@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use VtPhp\Auth\HasApiTokens;
 use VtPhp\Routing\UrlSigner;
 
 /**
@@ -19,6 +20,8 @@ use VtPhp\Routing\UrlSigner;
  */
 final class User extends Model
 {
+    use HasApiTokens;
+
     public const VERIFICATION_TTL_MINUTES = 60;
 
     /** @var array<int, string> */

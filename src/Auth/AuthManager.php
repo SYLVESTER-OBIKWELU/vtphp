@@ -12,6 +12,8 @@ final class AuthManager
     /** @var array<string, GuardInterface> */
     private array $guards = [];
 
+    private ?string $defaultOverride = null;
+
     public function __construct(
         private readonly Application $app,
         private readonly Repository $config,
@@ -20,9 +22,32 @@ final class AuthManager
 
     public function guard(?string $name = null): GuardInterface
     {
-        $name ??= (string) $this->config->get('auth.default.guard', 'web');
+        $name ??= $this->defaultGuard();
 
         return $this->guards[$name] ??= $this->resolve($name);
+    }
+
+    public function defaultGuard(): string
+    {
+        return $this->defaultOverride ?? (string) $this->config->get('auth.default.guard', 'web');
+    }
+
+    /**
+     * Make `$name` the default guard for the rest of this request, so
+     * auth()->user() and $request->user() see whoever it authenticated
+     * (Authenticate calls this with the guard that matched).
+     */
+    public function shouldUse(string $name): void
+    {
+        $this->defaultOverride = $name;
+    }
+
+    /**
+     * @return array<int, string> The configured guard names.
+     */
+    public function guardNames(): array
+    {
+        return array_keys((array) $this->config->get('auth.guards', []));
     }
 
     private function resolve(string $name): GuardInterface
@@ -33,6 +58,7 @@ final class AuthManager
 
         return match ($driver) {
             'session' => new SessionGuard($this->app, $this->provider((string) ($guardConfig['provider'] ?? ''))),
+            'token' => new TokenGuard($this->app, $this->provider((string) ($guardConfig['provider'] ?? '')), $this->config),
             default => throw new \InvalidArgumentException("Unsupported auth driver [{$driver}] for guard [{$name}]."),
         };
     }

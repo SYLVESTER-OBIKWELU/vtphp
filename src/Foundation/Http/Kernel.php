@@ -49,6 +49,10 @@ final class Kernel
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
+        // Available to services such as the token guard from the first
+        // middleware on (the dispatcher rebinds the enriched request later).
+        $this->app->instance(ServerRequestInterface::class, $request);
+
         try {
             return (new Pipeline($this->app))
                 ->send($request)
