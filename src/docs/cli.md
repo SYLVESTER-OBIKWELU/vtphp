@@ -44,6 +44,10 @@ php forge db:seed            # run database seeders
 
 See [Migrations & seeders](migrations.md).
 
+With `APP_ENV=production`, `migrate`, `migrate:rollback`, `db:seed` and
+`key:generate` refuse to run unless you add `--force`. To protect a command
+of your own the same way, set `protected bool $destructive = true;` on it.
+
 ## Cache & sessions
 
 ```powershell

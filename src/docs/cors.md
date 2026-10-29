@@ -72,3 +72,7 @@ cross-site when the cookie allows it:
 When credentials are on and `allowed_origins` contains `'*'`, the request's
 own origin is echoed back, because browsers reject `*` together with
 credentials.
+
+With cookies in play, writes (`POST`, `PUT`, `PATCH`, `DELETE`) must be sent
+as JSON or with an `X-Requested-With` header; see
+[CSRF protection](security.md#csrf-protection).
