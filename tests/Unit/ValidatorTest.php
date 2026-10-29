@@ -61,6 +61,17 @@ final class ValidatorTest extends TestCase
         $this->assertSame($passes, Validator::make(['field' => $value], ['field' => $rules])->passes());
     }
 
+    public function test_optional_fields_are_only_checked_when_sent(): void
+    {
+        $rules = ['nickname' => 'string|max:5', 'email' => 'required|email'];
+
+        $this->assertTrue(Validator::make(['email' => 'ada@example.com'], $rules)->passes(), 'Leaving out an optional field is fine.');
+        $this->assertFalse(Validator::make(['email' => 'ada@example.com', 'nickname' => 'far too long'], $rules)->passes());
+        $this->assertFalse(Validator::make(['email' => 'ada@example.com', 'nickname' => null], $rules)->passes(), 'Sent as null is still checked (use nullable).');
+        $this->assertSame(['email' => ['The email field is required.']], Validator::make([], $rules)->errors(), 'Only required complains about a missing field.');
+        $this->assertSame(['email' => 'ada@example.com'], Validator::make(['email' => 'ada@example.com'], $rules)->validated());
+    }
+
     public function test_confirmed_requires_a_matching_confirmation_field(): void
     {
         $rules = ['password' => ['confirmed']];

@@ -95,8 +95,9 @@ final class Validator
         foreach ($this->rules as $field => $ruleSet) {
             $rules = is_array($ruleSet) ? $ruleSet : explode('|', $ruleSet);
             $value = $this->data[$field] ?? null;
+            $present = array_key_exists($field, $this->data);
 
-            if (in_array('sometimes', $rules, true) && !array_key_exists($field, $this->data)) {
+            if (in_array('sometimes', $rules, true) && !$present) {
                 continue;
             }
 
@@ -106,6 +107,12 @@ final class Validator
 
             foreach ($rules as $rule) {
                 if ($rule === 'nullable' || $rule === 'sometimes') {
+                    continue;
+                }
+
+                // Like Laravel, a field that wasn't sent is only checked by
+                // `required`; rules like string|email apply when it is sent.
+                if (!$present && explode(':', $rule, 2)[0] !== 'required') {
                     continue;
                 }
 
