@@ -98,6 +98,17 @@ final class ExceptionHandlerTest extends TestCase
         $this->assertSame(\RuntimeException::class, $errors[0]['context']['exception']);
     }
 
+    public function test_model_not_found_becomes_a_404_without_leaking_the_class_name(): void
+    {
+        $e = (new \Illuminate\Database\Eloquent\ModelNotFoundException())->setModel(\App\Models\User::class, [5]);
+        $response = (new ExceptionHandler(new TestLogger(), false))->render($e);
+        $body = json_decode((string) $response->getBody(), true);
+
+        $this->assertSame(404, $response->getStatusCode());
+        $this->assertSame('NOT_FOUND', $body['error']['code']);
+        $this->assertSame('User not found.', $body['error']['message']);
+    }
+
     public function test_client_errors_are_not_logged(): void
     {
         $logger = new TestLogger();

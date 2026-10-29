@@ -269,6 +269,44 @@ final class RoutingTest extends TestCase
         $this->assertSame(['data' => [['name' => 'A'], ['name' => 'B']]], $this->json($this->dispatch('GET', '/collection')));
     }
 
+    public function test_api_resource_registers_the_five_laravel_routes(): void
+    {
+        $this->router->group(['prefix' => '/api/v1', 'as' => 'v1.'], function (Router $router): void {
+            $router->apiResource('users', RouteFixtureController::class, ['middleware' => [AddHeaderMiddleware::class]]);
+        });
+
+        $expected = [
+            'v1.users.index' => [['GET'], '/api/v1/users', 'index'],
+            'v1.users.store' => [['POST'], '/api/v1/users', 'store'],
+            'v1.users.show' => [['GET'], '/api/v1/users/{user}', 'show'],
+            'v1.users.update' => [['PUT', 'PATCH'], '/api/v1/users/{user}', 'update'],
+            'v1.users.destroy' => [['DELETE'], '/api/v1/users/{user}', 'destroy'],
+        ];
+
+        $this->assertSame(array_keys($expected), array_keys($this->router->routes()->all()));
+
+        foreach ($expected as $name => [$methods, $path, $action]) {
+            $route = $this->router->routes()->get($name);
+            $this->assertSame($methods, $route?->getMethods(), $name);
+            $this->assertSame($path, $route?->getPath(), $name);
+            $this->assertSame([RouteFixtureController::class, $action], $route?->getDefault('_action'), $name);
+            $this->assertSame([AddHeaderMiddleware::class], $route?->getDefault('_middleware'), $name);
+        }
+    }
+
+    public function test_api_resource_supports_only_except_and_parameter_naming(): void
+    {
+        $this->router->apiResource('photos', RouteFixtureController::class, ['only' => ['index', 'show']]);
+        $this->router->apiResource('blog-posts', RouteFixtureController::class, ['except' => ['destroy']]);
+        $this->router->apiResource('people', RouteFixtureController::class, ['only' => ['show'], 'parameter' => 'person_id']);
+
+        $names = array_keys($this->router->routes()->all());
+
+        $this->assertSame(['photos.index', 'photos.show', 'blog-posts.index', 'blog-posts.store', 'blog-posts.show', 'blog-posts.update', 'people.show'], $names);
+        $this->assertSame('/blog-posts/{blog_post}', $this->router->routes()->get('blog-posts.show')?->getPath(), 'Parameters are singular snake_case.');
+        $this->assertSame('/people/{person_id}', $this->router->routes()->get('people.show')?->getPath());
+    }
+
     #[Group('defect')]
     public function test_string_route_parameters_keep_leading_zeros(): void
     {

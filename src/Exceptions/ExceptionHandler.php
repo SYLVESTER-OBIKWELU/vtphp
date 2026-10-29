@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace VtPhp\Exceptions;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
 use VtPhp\Http\JsonResponse;
@@ -18,6 +19,11 @@ final class ExceptionHandler
 
     public function render(\Throwable $e, ?ServerRequestInterface $request = null): JsonResponse
     {
+        // `User::query()->findOrFail($id)` → 404, without leaking the model's FQCN.
+        if ($e instanceof ModelNotFoundException) {
+            $e = new NotFoundHttpException((new \ReflectionClass($e->getModel()))->getShortName().' not found.');
+        }
+
         [$status, $code, $extra] = match (true) {
             $e instanceof ValidationException => [422, $e->getErrorCode(), ['errors' => $e->getErrors()]],
             $e instanceof HttpException => [$e->getStatusCode(), $e->getErrorCode(), $e->getContext()],

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace VtPhp\Routing;
 
+use Illuminate\Database\Eloquent\Model;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use VtPhp\Container\Container;
+use VtPhp\Exceptions\NotFoundHttpException;
 use VtPhp\Http\JsonResponse;
 use VtPhp\Http\Request;
 use VtPhp\Middleware\Pipeline;
@@ -41,19 +43,69 @@ final class ControllerDispatcher
         $this->container->instance(ServerRequestInterface::class, $request);
         $this->container->instance(Request::class, Request::fromPsr($request));
 
-        $routeParams = $this->extractRouteParams($request);
-
-        if (is_array($action)) {
-            return $this->container->call($action, $routeParams);
-        }
-
         if (is_string($action) && str_contains($action, '@')) {
-            [$class, $method] = explode('@', $action, 2);
-
-            return $this->container->call([$class, $method], $routeParams);
+            $action = explode('@', $action, 2);
         }
+
+        $routeParams = $this->bindModels($action, $this->extractRouteParams($request));
 
         return $this->container->call($action, $routeParams);
+    }
+
+    /**
+     * Implicit route-model binding: a parameter typed as an Eloquent model
+     * whose name matches a route segment (`{user}` → `User $user`) receives
+     * the model instead of the raw id, or the request fails with a 404.
+     *
+     * @param array<int, string>|string|callable $action
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>
+     */
+    private function bindModels(array|string|callable $action, array $params): array
+    {
+        $function = is_array($action)
+            ? new \ReflectionMethod($action[0], $action[1])
+            : new \ReflectionFunction(\Closure::fromCallable($action));
+
+        foreach ($function->getParameters() as $parameter) {
+            $type = $parameter->getType();
+            $name = $parameter->getName();
+
+            if (!$type instanceof \ReflectionNamedType || $type->isBuiltin() || !array_key_exists($name, $params)) {
+                continue;
+            }
+
+            $class = $type->getName();
+
+            if (!is_subclass_of($class, Model::class)) {
+                continue;
+            }
+
+            $params[$name] = $this->resolveModel($class, $params[$name]);
+        }
+
+        return $params;
+    }
+
+    /**
+     * @param class-string<Model> $class
+     */
+    private function resolveModel(string $class, mixed $value): Model
+    {
+        $model = new $class();
+
+        // An integer key can never match a non-numeric segment; skip the
+        // query rather than let strict databases (e.g. PostgreSQL) throw.
+        $isIntKey = in_array($model->getKeyType(), ['int', 'integer'], true) && $model->getRouteKeyName() === $model->getKeyName();
+        $matchable = !$isIntKey || is_int($value) || (is_string($value) && ctype_digit($value));
+
+        $resolved = $matchable ? $model->resolveRouteBinding($value) : null;
+
+        if (!$resolved instanceof Model) {
+            throw new NotFoundHttpException((new \ReflectionClass($class))->getShortName().' not found.');
+        }
+
+        return $resolved;
     }
 
     /**

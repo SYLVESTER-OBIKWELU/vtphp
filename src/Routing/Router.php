@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace VtPhp\Routing;
 
+use Illuminate\Support\Str;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Component\Routing\Exception\MethodNotAllowedException;
@@ -122,6 +123,46 @@ final class Router
     private function currentGroup(): array
     {
         return end($this->groupStack) ?: [];
+    }
+
+    /**
+     * Register Laravel-style API resource routes:
+     *
+     *     $router->apiResource('users', UserController::class);
+     *
+     *     GET       /users           users.index    index()
+     *     POST      /users           users.store    store()
+     *     GET       /users/{user}    users.show     show()
+     *     PUT|PATCH /users/{user}    users.update   update()
+     *     DELETE    /users/{user}    users.destroy  destroy()
+     *
+     * @param class-string $controller
+     * @param array{only?: array<int, string>, except?: array<int, string>, middleware?: array<int, class-string>, parameter?: string} $options
+     */
+    public function apiResource(string $name, string $controller, array $options = []): void
+    {
+        $base = '/'.trim($name, '/');
+        $parameter = $options['parameter'] ?? Str::singular(str_replace('-', '_', basename($base)));
+        $routeName = str_replace('/', '.', trim($name, '/'));
+
+        $actions = [
+            'index' => [['GET'], $base],
+            'store' => [['POST'], $base],
+            'show' => [['GET'], "{$base}/{{$parameter}}"],
+            'update' => [['PUT', 'PATCH'], "{$base}/{{$parameter}}"],
+            'destroy' => [['DELETE'], "{$base}/{{$parameter}}"],
+        ];
+
+        $only = $options['only'] ?? array_keys($actions);
+        $except = $options['except'] ?? [];
+
+        foreach ($actions as $action => [$methods, $uri]) {
+            if (!in_array($action, $only, true) || in_array($action, $except, true)) {
+                continue;
+            }
+
+            $this->map($methods, $uri, [$controller, $action], "{$routeName}.{$action}", $options['middleware'] ?? []);
+        }
     }
 
     /**
