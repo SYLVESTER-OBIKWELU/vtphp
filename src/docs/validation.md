@@ -98,16 +98,18 @@ Rules are pipe-delimited strings (`'required|string|max:100'`) or arrays of stri
 | `sometimes`                              | Only validate the field if it is present (for partial updates).                                |
 | `nullable`                               | `null` is allowed; other rules are skipped when the value is `null`.                           |
 | `string`, `array`, `boolean`/`bool`      | The value has that type (`boolean` also accepts `0`, `1`, `'0'`, `'1'`).                       |
-| `integer`/`int`, `numeric`               | An integer (or digit string) / any numeric value.                                             |
+| `integer`/`int`, `numeric`               | An integer (or signed digit string like `"-5"`) / any numeric value.                         |
 | `email`                                  | A valid email address.                                                                        |
-| `min:N`, `max:N`                         | String length (in characters) or numeric value is at least / at most N.                       |
-| `in:a,b,c`                               | The value is one of the listed options.                                                       |
+| `min:N`, `max:N`                         | Size is at least / at most N. With `numeric`/`integer`, size is the value (`"25"` passes `integer\|min:18`); otherwise it's a string's character count or an array's item count. |
+| `in:a,b,c`                               | The value is a scalar and one of the listed options.                                          |
 | `date`                                   | A string that `strtotime()` can parse.                                                        |
 | `confirmed`                              | Equals `{field}_confirmation`.                                                                |
 | `unique:table,column,ignoreId,idColumn`  | No row in `table` has this value. `column` defaults to the field name; `ignoreId` skips one row. |
 | `exists:table,column`                    | A row in `table` has this value.                                                              |
 
-`unique` and `exists` query through the Eloquent connection.
+`unique` and `exists` query through the Eloquent connection. An unknown rule
+name, such as a typo like `requird`, throws an `InvalidArgumentException`
+rather than silently passing.
 
 ## Using the validator directly
 

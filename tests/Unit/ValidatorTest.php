@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace VtPhp\Tests\Unit;
 
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use VtPhp\Exceptions\ValidationException;
 use VtPhp\Validation\Validator;
@@ -118,36 +117,53 @@ final class ValidatorTest extends TestCase
         }
     }
 
-    #[Group('defect')]
-    public function test_an_unknown_rule_is_not_silently_treated_as_passing(): void
+    public function test_an_unknown_rule_fails_loudly(): void
     {
-        // A typo ("requird") or an unimplemented Laravel rule ("unique") passes today.
-        try {
-            $passes = Validator::make(['field' => ''], ['field' => 'requird'])->passes();
-        } catch (\Throwable) {
-            $passes = false;
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unknown validation rule [requird] on field [field].');
+
+        Validator::make(['field' => ''], ['field' => 'requird'])->passes();
+    }
+
+    /**
+     * @return iterable<string, array{0: string, 1: mixed, 2: bool}>
+     */
+    public static function sizeCases(): iterable
+    {
+        // Numeric rule present: compare the value, even for numeric strings.
+        yield 'integer|min:18 with "25"' => ['integer|min:18', '25', true];
+        yield 'integer|min:18 with "5"' => ['integer|min:18', '5', false];
+        yield 'integer|max:100 with "150"' => ['integer|max:100', '150', false];
+        yield 'numeric|max:9.99 with "9.5"' => ['numeric|max:9.99', '9.5', true];
+        yield 'numeric|max:9.99 with 10' => ['numeric|max:9.99', 10, false];
+        // No numeric rule: strings are measured by length, even if they look numeric.
+        yield 'string|max:3 with "1234"' => ['string|max:3', '1234', false];
+        yield 'string|min:2 with "99"' => ['string|min:2', '99', true];
+        // Arrays are measured by count.
+        yield 'array|max:2 with 3 items' => ['array|max:2', [1, 2, 3], false];
+        yield 'array|min:1 with 1 item' => ['array|min:1', ['a'], true];
+    }
+
+    #[DataProvider('sizeCases')]
+    public function test_min_and_max_measure_like_laravel(string $rules, mixed $value, bool $passes): void
+    {
+        $this->assertSame($passes, Validator::make(['field' => $value], ['field' => $rules])->passes());
+    }
+
+    public function test_integer_accepts_signed_numeric_strings(): void
+    {
+        foreach (['-5', '+5', '007', '0'] as $value) {
+            $this->assertTrue(Validator::make(['n' => $value], ['n' => 'integer'])->passes(), $value);
         }
 
-        $this->assertFalse($passes, 'Unknown rule "requird" was silently accepted.');
+        foreach (['1.5', '1e3', ' 5', '--5', ''] as $value) {
+            $this->assertFalse(Validator::make(['n' => $value], ['n' => 'integer'])->passes(), "'{$value}'");
+        }
     }
 
-    #[Group('defect')]
-    public function test_min_compares_numeric_strings_by_value(): void
+    public function test_in_rejects_non_scalar_values_cleanly(): void
     {
-        // Query-string / form input arrives as strings: "25" must satisfy integer|min:18.
-        $this->assertTrue(Validator::make(['age' => '25'], ['age' => 'integer|min:18'])->passes());
-    }
-
-    #[Group('defect')]
-    public function test_integer_accepts_negative_numeric_strings(): void
-    {
-        $this->assertTrue(Validator::make(['offset' => '-5'], ['offset' => 'integer'])->passes());
-    }
-
-    #[Group('defect')]
-    public function test_in_rejects_an_array_value_cleanly(): void
-    {
-        // Currently casts the array to string, raising "Array to string conversion".
         $this->assertTrue(Validator::make(['status' => ['draft']], ['status' => 'in:draft,published'])->fails());
+        $this->assertTrue(Validator::make(['status' => null], ['status' => 'in:draft,published'])->fails());
     }
 }

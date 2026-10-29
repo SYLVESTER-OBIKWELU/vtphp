@@ -109,36 +109,59 @@ final class Validator
                     continue;
                 }
 
-                $this->applyRule((string) $field, $value, $rule);
+                $this->applyRule((string) $field, $value, $rule, $rules);
             }
         }
     }
 
-    private function applyRule(string $field, mixed $value, string $rule): void
+    /**
+     * @param array<int, string> $fieldRules All rules on the field (min/max depend on them).
+     */
+    private function applyRule(string $field, mixed $value, string $rule, array $fieldRules): void
     {
         [$name, $param] = array_pad(explode(':', $rule, 2), 2, null);
 
         $valid = match ($name) {
             'required' => $value !== null && $value !== '',
             'string' => is_string($value),
-            'integer', 'int' => is_int($value) || (is_string($value) && ctype_digit($value)),
+            'integer', 'int' => is_int($value) || (is_string($value) && preg_match('/^[+-]?\d+$/', $value) === 1),
             'numeric' => is_numeric($value),
             'boolean', 'bool' => is_bool($value) || in_array($value, [0, 1, '0', '1', true, false], true),
             'array' => is_array($value),
             'email' => is_string($value) && filter_var($value, FILTER_VALIDATE_EMAIL) !== false,
-            'max' => is_string($value) ? mb_strlen($value) <= (int) $param : (!is_numeric($value) || $value <= (int) $param),
-            'min' => is_string($value) ? mb_strlen($value) >= (int) $param : (!is_numeric($value) || $value >= (int) $param),
-            'in' => in_array((string) $value, explode(',', (string) $param), true),
+            'max' => ($size = $this->size($value, $fieldRules)) === null || $size <= (float) $param,
+            'min' => ($size = $this->size($value, $fieldRules)) === null || $size >= (float) $param,
+            'in' => is_scalar($value) && in_array((string) $value, explode(',', (string) $param), true),
             'date' => is_string($value) && strtotime($value) !== false,
             'confirmed' => $value === ($this->data[$field.'_confirmation'] ?? null),
             'unique' => !$this->existsInDatabase($field, $value, (string) $param, withIgnore: true),
             'exists' => $this->existsInDatabase($field, $value, (string) $param, withIgnore: false),
-            default => true,
+            default => throw new \InvalidArgumentException("Unknown validation rule [{$name}] on field [{$field}]."),
         };
 
         if (!$valid) {
             $this->errors[$field][] = $this->message($field, $name, $param);
         }
+    }
+
+    /**
+     * What min/max measure, like Laravel: the numeric value when the field
+     * has a numeric/integer rule (so "25" with integer|min:18 passes),
+     * otherwise a string's length or an array's count. Null means the value
+     * has no size; the type rules report that.
+     *
+     * @param array<int, string> $fieldRules
+     */
+    private function size(mixed $value, array $fieldRules): ?float
+    {
+        $numeric = array_intersect(['numeric', 'integer', 'int'], $fieldRules) !== [];
+
+        return match (true) {
+            $numeric && is_numeric($value), is_int($value), is_float($value) => (float) $value,
+            is_string($value) => (float) mb_strlen($value),
+            is_array($value) => (float) count($value),
+            default => null,
+        };
     }
 
     private function message(string $field, ?string $rule, ?string $param): string
