@@ -24,4 +24,8 @@
             <directory>app</directory>
         </include>
     </source>
+    <php>
+        <!-- Makes the app load .env.testing instead of a developer's .env. -->
+        <env name="APP_ENV" value="testing" force="true"/>
+    </php>
 </phpunit>
