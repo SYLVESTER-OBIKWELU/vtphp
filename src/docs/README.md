@@ -1,7 +1,7 @@
 # VtPhp documentation
 
 Focused, task-oriented guides for working with the framework. Start with the
-top-level [README.md](../README.md) for installation and a project overview;
+top-level [README.md](../../README.md) for installation and a project overview;
 these pages go deeper on each subsystem.
 
 - [Routing](routing.md)

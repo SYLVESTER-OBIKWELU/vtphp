@@ -15,7 +15,7 @@ public function show(int $id): UserResource
 
 ## Documentation
 
-In-depth, per-topic guides live in [docs/](docs/README.md): routing,
+In-depth, per-topic guides live in [src/docs/](src/docs/README.md): routing,
 controllers, middleware, validation, resources, models, migrations, sessions
 & cookies & cache, authentication, views, mail, exceptions, the container,
 and the `forge` CLI.

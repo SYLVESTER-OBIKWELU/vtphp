@@ -32,7 +32,8 @@ return [
             'visibility' => 'private',
         ],
 
-        // Media/CDN service, not a generic disk — see docs/services/filesystem.md.
+        // Media/CDN service, not a generic disk — see section 43.3 of
+        // src/docs/php_api_framework_blueprint.md.
         'cloudinary' => [
             'driver' => 'cloudinary',
             'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),

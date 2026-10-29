@@ -133,7 +133,7 @@ final class UserApiTest extends FeatureTestCase
     #[Group('defect')]
     public function test_user_management_requires_authentication(): void
     {
-        // docs/authentication.md says these routes are guarded; they are not.
+        // src/docs/authentication.md says these routes are guarded; they are not.
         // Anyone can list, edit or delete any account.
         $user = $this->createUser();
         $this->cookies = [];
