@@ -199,6 +199,24 @@ final class ContainerTest extends TestCase
         $this->assertInstanceOf(FakeDependency::class, $result[1]);
     }
 
+    public function test_after_resolving_callbacks_run_for_matching_types_only(): void
+    {
+        $container = new Container();
+        $seen = [];
+        $container->afterResolving(FakeContract::class, function (FakeContract $object, Container $c) use (&$seen): void {
+            $seen[] = $object::class;
+        });
+        $container->bind(FakeContract::class, FakeImplementation::class);
+        $container->singleton('shared', fn () => new FakeImplementation());
+
+        $container->make(FakeContract::class);
+        $container->make(FakeDependency::class);
+        $container->make('shared');
+        $container->make('shared');
+
+        $this->assertSame([FakeImplementation::class, FakeImplementation::class], $seen, 'Singletons fire once, unrelated types never.');
+    }
+
     #[Group('defect')]
     public function test_an_optional_unbound_dependency_falls_back_to_its_default(): void
     {

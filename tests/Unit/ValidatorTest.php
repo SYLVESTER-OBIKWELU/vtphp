@@ -86,6 +86,27 @@ final class ValidatorTest extends TestCase
         $this->assertSame($data, Validator::make($data, ['name' => 'required|string'])->validate());
     }
 
+    public function test_validated_returns_only_fields_that_have_rules(): void
+    {
+        $validator = Validator::make(
+            ['name' => 'Ada', 'is_admin' => true, 'password' => 'x', 'password_confirmation' => 'x'],
+            ['name' => 'required', 'password' => 'confirmed', 'nickname' => 'nullable|string'],
+        );
+
+        $this->assertSame(['name' => 'Ada', 'password' => 'x'], $validator->validated());
+        $this->assertSame($validator->validated(), $validator->validate());
+    }
+
+    public function test_sometimes_skips_absent_fields_but_validates_present_ones(): void
+    {
+        $rules = ['name' => 'sometimes|string|max:5'];
+
+        $this->assertTrue(Validator::make([], $rules)->passes());
+        $this->assertTrue(Validator::make(['name' => 'Ada'], $rules)->passes());
+        $this->assertFalse(Validator::make(['name' => 'Adalovelace'], $rules)->passes());
+        $this->assertFalse(Validator::make(['name' => null], $rules)->passes(), 'Present-but-null is still validated.');
+    }
+
     public function test_validate_throws_with_the_errors_when_invalid(): void
     {
         try {

@@ -22,6 +22,9 @@ class Container implements ContainerInterface
     /** @var array<string, string> */
     protected array $aliases = [];
 
+    /** @var array<string, list<Closure>> */
+    protected array $afterResolving = [];
+
     public function bind(string $abstract, Closure|string|null $concrete = null, bool $shared = false): void
     {
         $this->bindings[$abstract] = [
@@ -43,6 +46,15 @@ class Container implements ContainerInterface
     public function alias(string $alias, string $abstract): void
     {
         $this->aliases[$alias] = $abstract;
+    }
+
+    /**
+     * Run a callback whenever a freshly built object is an instance of the
+     * given class or interface (e.g. to validate FormRequests on injection).
+     */
+    public function afterResolving(string $type, Closure $callback): void
+    {
+        $this->afterResolving[$type][] = $callback;
     }
 
     public function has(string $id): bool
@@ -74,6 +86,14 @@ class Container implements ContainerInterface
         $object = $concrete instanceof Closure
             ? $concrete($this, $parameters)
             : $this->build($concrete, $parameters);
+
+        foreach ($this->afterResolving as $type => $callbacks) {
+            if ($object instanceof $type) {
+                foreach ($callbacks as $callback) {
+                    $callback($object, $this);
+                }
+            }
+        }
 
         if ($binding['shared'] ?? false) {
             $this->instances[$abstract] = $object;

@@ -12,6 +12,7 @@ use VtPhp\Cookie\CookieJar;
 use VtPhp\Database\DatabaseManager;
 use VtPhp\Database\EloquentManager;
 use VtPhp\Exceptions\ExceptionHandler;
+use VtPhp\Http\FormRequest;
 use VtPhp\Http\ResponseFactory;
 use VtPhp\Logging\LogManager;
 use VtPhp\Mail\Mailer;
@@ -93,6 +94,11 @@ final class CoreServiceProvider extends ServiceProvider
         $this->app->singleton(
             AuthManager::class,
             fn (Application $app) => new AuthManager($app, $app->make(Repository::class))
+        );
+
+        $this->app->afterResolving(
+            FormRequest::class,
+            static fn (FormRequest $request) => $request->validateResolved(),
         );
 
         $this->app->make(EloquentManager::class)->boot();

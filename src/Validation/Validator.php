@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace VtPhp\Validation;
 
+use Illuminate\Database\Capsule\Manager as Capsule;
 use VtPhp\Exceptions\ValidationException;
 
 /**
  * Lightweight rule-string validator ("required|string|max:100"), inspired by
- * Laravel's validation DX but with no external dependency.
+ * Laravel's validation DX. Database rules (unique, exists) query through the
+ * booted Eloquent connection.
  */
 final class Validator
 {
@@ -57,15 +59,29 @@ final class Validator
     }
 
     /**
+     * Throws a ValidationException on failure; otherwise returns the
+     * validated fields (see validated()).
+     *
      * @return array<string, mixed>
      */
     public function validate(): array
+    {
+        return $this->validated();
+    }
+
+    /**
+     * Only the input fields that have rules, so unexpected keys (e.g. a
+     * smuggled `is_admin`) never reach Model::create()/update().
+     *
+     * @return array<string, mixed>
+     */
+    public function validated(): array
     {
         if ($this->fails()) {
             throw new ValidationException($this->errors);
         }
 
-        return $this->data;
+        return array_intersect_key($this->data, $this->rules);
     }
 
     private function run(): void
@@ -80,12 +96,16 @@ final class Validator
             $rules = is_array($ruleSet) ? $ruleSet : explode('|', $ruleSet);
             $value = $this->data[$field] ?? null;
 
+            if (in_array('sometimes', $rules, true) && !array_key_exists($field, $this->data)) {
+                continue;
+            }
+
             if ($value === null && in_array('nullable', $rules, true)) {
                 continue;
             }
 
             foreach ($rules as $rule) {
-                if ($rule === 'nullable') {
+                if ($rule === 'nullable' || $rule === 'sometimes') {
                     continue;
                 }
 
@@ -111,6 +131,8 @@ final class Validator
             'in' => in_array((string) $value, explode(',', (string) $param), true),
             'date' => is_string($value) && strtotime($value) !== false,
             'confirmed' => $value === ($this->data[$field.'_confirmation'] ?? null),
+            'unique' => !$this->existsInDatabase($field, $value, (string) $param, withIgnore: true),
+            'exists' => $this->existsInDatabase($field, $value, (string) $param, withIgnore: false),
             default => true,
         };
 
@@ -134,7 +156,31 @@ final class Validator
             'in' => "The selected {$field} is invalid.",
             'date' => "The {$field} field must be a valid date.",
             'confirmed' => "The {$field} confirmation does not match.",
+            'unique' => "The {$field} has already been taken.",
+            'exists' => "The selected {$field} is invalid.",
             default => "The {$field} field is invalid.",
         };
+    }
+
+    /**
+     * Backs `unique:table,column,ignoreId,idColumn` and `exists:table,column`,
+     * querying through the Eloquent connection. The column defaults to the
+     * field name; `ignoreId` lets an update keep its own current value.
+     */
+    private function existsInDatabase(string $field, mixed $value, string $param, bool $withIgnore): bool
+    {
+        if (!is_scalar($value)) {
+            return false;
+        }
+
+        [$table, $column, $ignore, $idColumn] = array_pad(explode(',', $param), 4, null);
+
+        $query = Capsule::table((string) $table)->where($column ?: $field, $value);
+
+        if ($withIgnore && $ignore !== null && $ignore !== '' && strtoupper($ignore) !== 'NULL') {
+            $query->where($idColumn ?: 'id', '!=', $ignore);
+        }
+
+        return $query->exists();
     }
 }

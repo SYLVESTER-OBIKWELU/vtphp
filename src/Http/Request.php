@@ -5,16 +5,37 @@ declare(strict_types=1);
 namespace VtPhp\Http;
 
 use Psr\Http\Message\ServerRequestInterface;
+use VtPhp\Validation\Validator;
 
-final class Request
+class Request
 {
-    private function __construct(private ServerRequestInterface $psr)
+    final public function __construct(private ServerRequestInterface $psr)
     {
     }
 
-    public static function fromPsr(ServerRequestInterface $psr): self
+    public static function fromPsr(ServerRequestInterface $psr): static
     {
-        return new self($psr);
+        return new static($psr);
+    }
+
+    /**
+     * Validate the input and return only the validated fields, throwing a
+     * ValidationException (422) on failure — like Laravel's $request->validate().
+     *
+     * @param array<string, array<int, string>|string> $rules
+     * @return array<string, mixed>
+     */
+    public function validate(array $rules): array
+    {
+        return Validator::make($this->all(), $rules)->validated();
+    }
+
+    /**
+     * The authenticated user for the given (or default) guard.
+     */
+    public function user(?string $guard = null): ?object
+    {
+        return auth($guard)->user();
     }
 
     public function psr(): ServerRequestInterface
