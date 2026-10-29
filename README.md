@@ -87,6 +87,7 @@ All guides live in [src/docs](src/docs/README.md), in learning order:
 
 - **Routing:** route files, `apiResource()` for the five standard endpoints,
   and automatic lookup of records from URLs (with a `404` if missing).
+- **Pagination:** Eloquent's `paginate()` with `meta` and `links` in the JSON.
 - **Validation:** form request classes with Laravel-style rules
   (`required|email|unique:users,email`), checked before your code runs.
 - **Database:** Eloquent models, Laravel-style migrations, and seeders.
@@ -116,7 +117,7 @@ The project comes with a small user system you can use or replace:
 | `POST /api/v1/users` | Sign up (`name`, `email`, `password`, `password_confirmation`) |
 | `POST /api/v1/login` / `POST /api/v1/logout` | Log in / out (sets a session cookie) |
 | `GET /api/v1/me` | The logged-in user |
-| `GET /api/v1/users`, `GET /api/v1/users/{id}` | List / show users (login required) |
+| `GET /api/v1/users`, `GET /api/v1/users/{id}` | List users a page at a time (`?page=2`) / show one (login required) |
 | `PATCH /api/v1/users/{id}`, `DELETE /api/v1/users/{id}` | Edit / delete your own account |
 | `POST /api/v1/password/forgot`, `POST /api/v1/password/reset` | Reset a forgotten password |
 | `POST /api/v1/email/verification-notification` | Send an email-verification link |

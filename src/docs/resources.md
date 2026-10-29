@@ -107,7 +107,8 @@ public function index(): ResourceCollection
 ```
 
 Each item goes through your `toArray()`. `collection()` accepts an Eloquent
-result, any array or list, or a paginator (below).
+result, any array or list, or a page of results from `paginate()`
+(below).
 
 ## Status codes and headers
 
@@ -134,41 +135,35 @@ Collections support `->status()` too.
 ### Pages of results (pagination)
 
 Sending thousands of records at once is slow. **Pagination** sends one page
-at a time. Build a `LengthAwarePaginator` and pass it to `collection()`; the
-response then also says which page this is and how to get the others:
+at a time. Call Eloquent's `paginate()` instead of `get()` and pass the result
+to `collection()`:
 
 ```php
 // app/Http/Controllers/PostController.php
 use VtPhp\Http\Request;
-use VtPhp\Pagination\LengthAwarePaginator;
 use VtPhp\Resources\ResourceCollection;
 
 public function index(Request $request): ResourceCollection
 {
-    $perPage = 20;
-    $page = max(1, (int) $request->query('page', 1));
-    $query = Post::query()->orderBy('id');
-
-    $paginator = new LengthAwarePaginator(
-        (clone $query)->forPage($page, $perPage)->get()->all(), // this page's items
-        $query->count(),                                        // total across all pages
-        $perPage,
-        $page,
-        '/api/v1/posts',                                        // base path for the links
+    return PostResource::collection(
+        Post::query()->orderBy('id')->paginate($request->perPage())
     );
-
-    return PostResource::collection($paginator);
 }
 ```
 
+The caller picks the page with `?page=` and, thanks to `$request->perPage()`,
+the page size with `?per_page=`:
+
 ```http
-GET /api/v1/posts?page=2
+GET /api/v1/posts?page=2&per_page=20
 ```
+
+The response then also says which page this is and how to get the others:
 
 ```json
 {
   "data": [{"id": 21, "title": "..."}],
-  "meta": {"current_page": 2, "per_page": 20, "total": 45, "last_page": 3},
+  "meta": {"current_page": 2, "per_page": 20, "total": 45, "last_page": 3, "from": 21, "to": 40},
   "links": {
     "first": "/api/v1/posts?page=1",
     "last": "/api/v1/posts?page=3",
@@ -178,13 +173,35 @@ GET /api/v1/posts?page=2
 }
 ```
 
-`prev` is `null` on the first page and `next` is `null` on the last.
+- `prev` is `null` on the first page and `next` is `null` on the last.
+- A missing or nonsense page (`?page=abc`, `?page=0`) means page 1. A page
+  past the end returns an empty `data` list, not an error.
+- `$request->perPage()` uses 15 unless the caller asks otherwise, and never
+  goes above 100. Change both with `$request->perPage(25, 50)`. Or skip it
+  and use a fixed size: `->paginate(20)`.
+- `from` and `to` are the positions of the first and last record on this
+  page (`null` on an empty page).
 
-> Coming from Laravel? Eloquent's `->paginate()` isn't available, because it
-> needs the `illuminate/pagination` package, which VtPhp doesn't install. Build
-> the paginator as shown above. The sample `GET /api/v1/users` isn't paginated
-> yet either.
+**Keeping filters in the links.** If the URL has other options, such as
+`?status=draft&page=2`, add `->withQueryString()` so the links keep them:
 
+```php
+Post::query()->where('status', $request->query('status'))->paginate(20)->withQueryString();
+```
+
+**Other kinds of paging:**
+
+| Method | Good for | Response |
+| --- | --- | --- |
+| `paginate()` | most lists | `meta` has `total` and `last_page` |
+| `simplePaginate()` | big tables where counting every row is slow | no `total`, `last_page` or `last` link; just previous and next |
+| `cursorPaginate()` | infinite scroll and feeds that change while people read | `?cursor=...` instead of `?page=`; `meta` has `next_cursor` and `prev_cursor` |
+
+The sample app's `GET /api/v1/users` uses `paginate()`.
+
+> Building pages from something that isn't an Eloquent query, like an API
+> result? Wrap them in `VtPhp\Pagination\LengthAwarePaginator`:
+> `new LengthAwarePaginator($items, $total, $perPage, $page, '/api/v1/things')`.
 ### Responses without a resource
 
 For a simple message, skip the resource and use the `response()` helper:

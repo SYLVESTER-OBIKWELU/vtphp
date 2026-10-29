@@ -232,36 +232,25 @@ doesn't restrict any of it.
 
 ### Pagination
 
-Eloquent's `paginate()` method isn't available, because it needs a package
-VtPhp doesn't install. Page through results yourself and wrap them in VtPhp's
-paginator, which adds `meta` and `links` to the JSON response:
+Use `paginate()` instead of `get()` to fetch one page at a time. The page
+number comes from `?page=` in the URL automatically:
 
 ```php
 // app/Http/Controllers/PostController.php
-use App\Http\Resources\PostResource;
-use App\Models\Post;
 use VtPhp\Http\Request;
-use VtPhp\Pagination\LengthAwarePaginator;
 use VtPhp\Resources\ResourceCollection;
 
 public function index(Request $request): ResourceCollection
 {
-    $page = max(1, (int) $request->query('page', 1));
-    $perPage = 20;
-    $query = Post::query()->orderBy('id');
-
-    $paginator = new LengthAwarePaginator(
-        $query->clone()->forPage($page, $perPage)->get()->all(),
-        $query->count(),
-        $perPage,
-        $page,
-        '/api/v1/posts',
+    return PostResource::collection(
+        Post::query()->orderBy('id')->paginate($request->perPage()) // ?page=2&per_page=20
     );
-
-    return PostResource::collection($paginator);
 }
 ```
 
+`simplePaginate()` and `cursorPaginate()` work too. See
+[Resources](resources.md#pages-of-results-pagination) for what the JSON looks
+like and when to use each.
 ## Common mistakes
 
 - **"Table not found" errors.** The table doesn't exist yet. Create a
