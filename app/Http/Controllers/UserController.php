@@ -10,15 +10,17 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use VtPhp\Auth\Access\AuthorizesRequests;
 use VtPhp\Http\JsonResponse;
+use VtPhp\Http\Request;
 use VtPhp\Resources\ResourceCollection;
 
 final class UserController
 {
     use AuthorizesRequests;
 
-    public function index(): ResourceCollection
+    public function index(Request $request): ResourceCollection
     {
-        return UserResource::collection(User::query()->orderBy('id')->get());
+        // ?page=2&per_page=50 (at most 100 per page)
+        return UserResource::collection(User::query()->orderBy('id')->paginate($request->perPage()));
     }
 
     public function store(StoreUserRequest $request): UserResource
