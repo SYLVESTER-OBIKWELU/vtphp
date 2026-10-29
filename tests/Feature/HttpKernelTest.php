@@ -40,7 +40,9 @@ final class HttpKernelTest extends FeatureTestCase
         $this->assertStringContainsString('HttpOnly', $header);
         $this->assertStringContainsString('SameSite=Lax', $header);
         $this->assertStringContainsString('Path=/', $header);
-        $this->assertStringContainsString('Max-Age=7200', $header);
+        // Expiry is fixed when the cookie is queued and Max-Age computed when the
+        // header is written, so a second boundary in between yields 7199.
+        $this->assertMatchesRegularExpression('/Max-Age=(7199|7200)\b/', $header);
     }
 
     public function test_the_session_id_is_stable_across_requests(): void
