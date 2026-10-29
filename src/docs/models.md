@@ -72,7 +72,7 @@ php forge make:model Post -a
 ```
 
 `-a` (all) also creates a migration, a seeder, a controller, two form
-requests and a JSON resource. Each piece is explained in
+requests, a JSON resource and a policy. Each piece is explained in
 [Your first API](your-first-api.md). The individual flags are:
 
 | Flag | Creates |
@@ -83,6 +83,7 @@ requests and a JSON resource. Each piece is explained in
 | `-r` (or `--api`) | a full controller with index/store/show/update/destroy, already using the model |
 | `-R` | `StorePostRequest` and `UpdatePostRequest` for validation |
 | `-j` | a JSON resource (`PostResource`) that shapes the API output |
+| `-p` | a policy (`PostPolicy`) that decides who may change a post ([Authorization](authorization.md)) |
 | `-a` | all of the above |
 
 Flags combine: `php forge make:model Post -mcr` makes the model, a migration

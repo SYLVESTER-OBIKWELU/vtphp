@@ -93,6 +93,9 @@ All guides live in [src/docs](src/docs/README.md), in learning order:
   Works with SQLite, MySQL and PostgreSQL.
 - **Accounts:** sign-up, login and logout with sessions, password reset, and
   email verification with signed, expiring links.
+- **API tokens** for mobile apps and scripts, with per-token abilities and
+  expiry.
+- **Authorization:** policies and gates decide who may do what.
 - **Security, on by default:** rate limiting, CSRF protection, security
   headers, safe proxy handling, protection against account guessing, and
   production safeguards on destructive commands.
@@ -122,9 +125,8 @@ See [Authentication](src/docs/authentication.md) for how it all works.
 
 ## Not available yet
 
-To save you looking: token (bearer) authentication, permission rules
-(gates/policies), model factories, queues and background jobs, events, file
-storage drivers, config/route caching, and generated API documentation
+To save you looking: model factories, queues and background jobs, events,
+file storage drivers, config/route caching, and generated API documentation
 (OpenAPI) aren't built yet. The [design notes](src/docs/php_api_framework_blueprint.md)
 describe the roadmap.
 

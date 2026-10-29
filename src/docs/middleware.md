@@ -142,6 +142,7 @@ then the route's own.
 | --- | --- |
 | `Authenticate` | Rejects guests with `401 UNAUTHENTICATED`. Plain `Authenticate::class` accepts the session cookie; `Authenticate::using('web', 'api')` also accepts API tokens. See [Authentication](authentication.md). |
 | `RequireTokenAbility` | Requires the API token to have an ability, e.g. `RequireTokenAbility::using('notes:write')` (`403` otherwise). |
+| `Can` | Requires a gate rule to pass, e.g. `Can::using('viewReports')` (`403` otherwise). See [Authorization](authorization.md). |
 | `ThrottleRequests` | Rate limits. Use `ThrottleRequests::using('auth')` to pick a named limit from `config/rate_limiting.php`. See [Security](security.md#rate-limiting). |
 
 ### On every request (the global list)

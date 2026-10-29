@@ -55,6 +55,7 @@ the right namespace. They never overwrite a file that already exists.
 | `php forge make:migration create_posts_table` | `database/migrations/<date>_create_posts_table.php` |
 | `php forge make:seeder PostSeeder` | `database/seeders/PostSeeder.php` |
 | `php forge make:mail OrderShipped` | `app/Mail/OrderShipped.php` |
+| `php forge make:policy PostPolicy --model=Post` | `app/Policies/PostPolicy.php` (leave out `--model` for an empty policy) |
 
 ### Making a model with everything around it
 
@@ -69,6 +70,7 @@ short flags freely, for example `-mcr`:
 | `-r`, `--resource` (or `--api`) | a full controller with `index`, `store`, `show`, `update` and `destroy`, wired to the model |
 | `-R`, `--requests` | `StorePostRequest` and `UpdatePostRequest` form requests |
 | `-j`, `--json-resource` | `PostResource`, which shapes the JSON output |
+| `-p`, `--policy` | `PostPolicy`, the permission rules (see [Authorization](authorization.md)) |
 | `-a`, `--all` | all of the above |
 
 ```bash
@@ -83,8 +85,8 @@ When it creates a full controller, the command prints the line to add to
 $router->apiResource('posts', PostController::class);
 ```
 
-Factories and policies, which Laravel's `-a` also creates, aren't available
-in VtPhp yet.
+Model factories, which Laravel's `-a` also creates, aren't available in
+VtPhp yet.
 
 ### Controller options
 

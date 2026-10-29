@@ -110,27 +110,19 @@ do. The sample app keeps sign-up public, requires login for the rest of the
 `users` routes, and only lets users edit or delete their own account. Anyone
 else gets `403 FORBIDDEN`.
 
-For updates, the check lives in the form request's `authorize()` method:
+The rules live in a policy, `app/Policies/UserPolicy.php`:
 
 ```php
-// app/Http/Requests/UpdateUserRequest.php
-public function authorize(): bool
+public function update(User $user, User $account): bool
 {
-    return (string) auth()->id() === (string) $this->route('user');
+    return $user->id === $account->id;
 }
 ```
 
-For deletes, it's a check in the controller:
-
-```php
-// app/Http/Controllers/UserController.php
-if ((string) auth()->id() !== (string) $user->id) {
-    throw new AuthorizationException('You may only delete your own account.');
-}
-```
-
-VtPhp doesn't have policies or gates (Laravel's rule classes for this) yet,
-so write checks like these where you need them.
+The form request checks it with `gate()->allows('update', $account)`, and the
+controller's `destroy()` calls `$this->authorize('delete', $user)`. See
+[Authorization](authorization.md) for policies, gates and the `Can`
+middleware.
 
 ## Calling the API from a browser app
 

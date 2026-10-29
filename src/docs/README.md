@@ -26,7 +26,8 @@ whatever you need.
 
 ## 3. Building a real app
 
-- [Authentication](authentication.md): sign-up, login, logout and protected routes.
+- [Authentication](authentication.md): sign-up, login, logout, API tokens and protected routes.
+- [Authorization](authorization.md): decide who may do what, with policies and gates.
 - [Sessions, cookies and cache](sessions-cookies-cache.md): remember things between requests.
 - [Mail](mail.md): send emails.
 - [Views](views.md): templates for emails and pages.
@@ -59,6 +60,7 @@ whatever you need.
 | **Model** | A class that represents a database table. |
 | **Migration** | A file that creates or changes database tables. |
 | **Middleware** | Code that runs before/after controllers for many routes. |
+| **Policy** | A class of rules about who may do what with a model. |
 | **`.env`** | Your private settings file. |
 
 The design notes behind the framework (goals, architecture and roadmap) are
