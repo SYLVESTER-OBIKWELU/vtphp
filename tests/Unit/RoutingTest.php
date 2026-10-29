@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace VtPhp\Tests\Unit;
 
 use Nyholm\Psr7\Factory\Psr17Factory;
-use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -307,13 +306,37 @@ final class RoutingTest extends TestCase
         $this->assertSame('/people/{person_id}', $this->router->routes()->get('people.show')?->getPath());
     }
 
-    #[Group('defect')]
     public function test_string_route_parameters_keep_leading_zeros(): void
     {
-        // Digit-only segments are cast to int before injection, so "007" arrives as 7
-        // (or a TypeError under strict types) even when the handler asks for a string.
         $this->router->get('/codes/{code}', fn (string $code): array => ['code' => $code]);
+        $this->router->get('/raw/{value}', fn ($value): array => ['type' => get_debug_type($value), 'value' => $value]);
 
         $this->assertSame(['code' => '007'], $this->json($this->dispatch('GET', '/codes/007')));
+        $this->assertSame(['type' => 'string', 'value' => '0042'], $this->json($this->dispatch('GET', '/raw/0042')), 'Untyped parameters get the raw string.');
+    }
+
+    public function test_numeric_parameters_are_cast_from_their_declared_type(): void
+    {
+        $this->router->get('/ints/{n}', fn (int $n): array => ['n' => $n]);
+        $this->router->get('/floats/{f}', fn (float $f): array => ['f' => $f]);
+
+        $this->assertSame(['n' => -12], $this->json($this->dispatch('GET', '/ints/-12')));
+        $this->assertSame(['n' => 7], $this->json($this->dispatch('GET', '/ints/007')));
+        $this->assertSame(['f' => 2.5], $this->json($this->dispatch('GET', '/floats/2.5')));
+    }
+
+    public function test_a_segment_that_does_not_fit_a_numeric_type_is_a_404(): void
+    {
+        $this->router->get('/ints/{n}', fn (int $n): array => ['n' => $n]);
+        $this->router->get('/floats/{f}', fn (float $f): array => ['f' => $f]);
+
+        foreach (['/ints/abc', '/ints/1.5', '/ints/99999999999999999999', '/floats/abc'] as $path) {
+            try {
+                $this->dispatch('GET', $path);
+                $this->fail("{$path} should be a 404.");
+            } catch (NotFoundHttpException $e) {
+                $this->assertSame(404, $e->getStatusCode(), $path);
+            }
+        }
     }
 }

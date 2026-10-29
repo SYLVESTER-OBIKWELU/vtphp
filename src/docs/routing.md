@@ -83,8 +83,11 @@ public function show(Post $post): PostResource
   so override that on the model to bind by slug.
 - `User::query()->findOrFail($id)` elsewhere in your code produces the same 404.
 
-Other parameters are injected by name as raw values (digit-only values as
-`int`) and are also available via `$request->route('name')`.
+Other parameters are injected by name and converted to their declared type.
+`int $id` and `float $amount` receive numbers, and a segment that doesn't fit
+(`/orders/abc`) is a 404. `string` and untyped parameters receive the raw
+string, so `/codes/007` gives `"007"`. Raw values are also available via
+`$request->route('name')`.
 
 ## Groups
 

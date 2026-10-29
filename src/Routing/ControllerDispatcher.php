@@ -48,21 +48,26 @@ final class ControllerDispatcher
             $action = explode('@', $action, 2);
         }
 
-        $routeParams = $this->bindModels($action, $this->extractRouteParams($request));
+        $routeParams = $this->resolveRouteParameters($action, $this->extractRouteParams($request));
 
         return $this->container->call($action, $routeParams);
     }
 
     /**
-     * Implicit route-model binding: a parameter typed as an Eloquent model
-     * whose name matches a route segment (`{user}` → `User $user`) receives
-     * the model instead of the raw id, or the request fails with a 404.
+     * Converts raw (string) route segments to what the action declares:
+     *
+     * - Implicit route-model binding: a parameter typed as an Eloquent model
+     *   whose name matches a segment (`{user}` → `User $user`) receives the
+     *   model, or the request fails with a 404.
+     * - `int`/`float` parameters receive the number; a segment that isn't
+     *   one (`/orders/abc` for `int $id`) is a 404, not a TypeError.
+     * - Everything else gets the raw string, so "007" stays "007".
      *
      * @param array<int, string>|string|callable $action
      * @param array<string, mixed> $params
      * @return array<string, mixed>
      */
-    private function bindModels(array|string|callable $action, array $params): array
+    private function resolveRouteParameters(array|string|callable $action, array $params): array
     {
         $function = is_array($action)
             ? new \ReflectionMethod($action[0], $action[1])
@@ -74,20 +79,38 @@ final class ControllerDispatcher
             // `BlogPost $blogPost` also binds to apiResource's `{blog_post}` segment.
             $segment = array_key_exists($name, $params) ? $name : Str::snake($name);
 
-            if (!$type instanceof \ReflectionNamedType || $type->isBuiltin() || !array_key_exists($segment, $params)) {
+            if (!$type instanceof \ReflectionNamedType || !array_key_exists($segment, $params)) {
                 continue;
             }
 
             $class = $type->getName();
 
-            if (!is_subclass_of($class, Model::class)) {
-                continue;
+            if ($type->isBuiltin()) {
+                $params[$name] = $this->castScalar($class, $params[$segment]);
+            } elseif (is_subclass_of($class, Model::class)) {
+                $params[$name] = $this->resolveModel($class, $params[$segment]);
             }
-
-            $params[$name] = $this->resolveModel($class, $params[$segment]);
         }
 
         return $params;
+    }
+
+    private function castScalar(string $type, mixed $value): mixed
+    {
+        if (!is_string($value)) {
+            return $value;
+        }
+
+        return match ($type) {
+            // Digits only (an optional minus), leading zeros allowed, and within
+            // PHP_INT range so huge values 404 instead of silently overflowing.
+            'int' => preg_match('/^-?\d+$/', $value) === 1
+                && filter_var(preg_replace('/^(-?)0+(?=\d)/', '$1', $value), FILTER_VALIDATE_INT) !== false
+                ? (int) $value
+                : throw new NotFoundHttpException(),
+            'float' => is_numeric($value) ? (float) $value : throw new NotFoundHttpException(),
+            default => $value,
+        };
     }
 
     /**
@@ -121,11 +144,6 @@ final class ControllerDispatcher
         foreach ($request->getAttributes() as $key => $value) {
             if (str_starts_with((string) $key, '_')) {
                 continue;
-            }
-
-            // Coerce numeric route segments so `int $id`-typed parameters resolve cleanly.
-            if (is_string($value) && ctype_digit($value)) {
-                $value = (int) $value;
             }
 
             $params[$key] = $value;

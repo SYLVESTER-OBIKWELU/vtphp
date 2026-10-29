@@ -63,7 +63,7 @@ Parameters are resolved by type and name:
 | A model, e.g. `User $user`              | **Route-model binding:** the model whose key matches the `{user}` segment, or a 404 `User not found.` (see [Routing](routing.md#route-model-binding)). |
 | A `FormRequest`, e.g. `StoreUserRequest` | The request, already authorized and validated. Invalid input never reaches the action (see [Validation](validation.md)).                                |
 | `VtPhp\Http\Request`                    | The current request (`input()`, `query()`, `user()`, `validate()`, …).                                                                                    |
-| A scalar named after a segment          | The raw route parameter, e.g. `string $hash` for `{hash}`. Digit-only values arrive as `int`.                                                             |
+| A scalar named after a segment          | The route parameter, e.g. `string $hash` for `{hash}`, converted to `int`/`float` when declared so (a mismatch is a 404).                                  |
 | Any other class                         | Resolved from the container, e.g. `Mailer $mailer`.                                                                                                        |
 
 Constructor dependencies are resolved through the container too.
