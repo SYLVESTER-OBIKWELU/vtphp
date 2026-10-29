@@ -18,6 +18,7 @@ use VtPhp\Http\FormRequest;
 use VtPhp\Http\ResponseFactory;
 use VtPhp\Logging\LogManager;
 use VtPhp\Mail\Mailer;
+use VtPhp\Pagination\PaginationState;
 use VtPhp\Routing\ControllerDispatcher;
 use VtPhp\Routing\Router;
 use VtPhp\Session\SessionManager;
@@ -114,6 +115,7 @@ final class CoreServiceProvider extends ServiceProvider
         );
 
         $this->app->make(EloquentManager::class)->boot();
+        PaginationState::resolveUsing($this->app);
 
         $this->app->alias('router', Router::class);
         $this->app->alias('db', DatabaseManager::class);

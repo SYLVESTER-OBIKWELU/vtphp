@@ -80,6 +80,18 @@ class Request
         return $this->psr->getQueryParams()[$key] ?? $default;
     }
 
+    /**
+     * The page size asked for with ?per_page=, kept between 1 and $max so
+     * nobody can ask for a million rows at once.
+     */
+    public function perPage(int $default = 15, int $max = 100): int
+    {
+        $value = $this->query('per_page');
+        $perPage = is_scalar($value) && filter_var($value, FILTER_VALIDATE_INT) !== false ? (int) $value : $default;
+
+        return max(1, min($max, $perPage));
+    }
+
     public function input(string $key, mixed $default = null): mixed
     {
         return $this->all()[$key] ?? $default;

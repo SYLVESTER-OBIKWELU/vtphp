@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace VtPhp\Resources;
 
+use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Contracts\Pagination\Paginator;
 use VtPhp\Http\JsonResponse;
 use VtPhp\Pagination\LengthAwarePaginator;
 
@@ -30,9 +32,9 @@ abstract class JsonResource
     }
 
     /**
-     * @param iterable<mixed>|LengthAwarePaginator $resources
+     * @param iterable<mixed>|LengthAwarePaginator|Paginator<array-key, mixed>|CursorPaginator<array-key, mixed> $resources
      */
-    public static function collection(iterable|LengthAwarePaginator $resources): ResourceCollection
+    public static function collection(iterable|LengthAwarePaginator|Paginator|CursorPaginator $resources): ResourceCollection
     {
         return new ResourceCollection($resources, static::class);
     }
