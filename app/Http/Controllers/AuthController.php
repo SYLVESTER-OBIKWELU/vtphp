@@ -22,7 +22,13 @@ final class AuthController
 
     public function logout(): JsonResponse
     {
-        auth()->logout();
+        // A token client logging out revokes the token it used; a browser
+        // ends its session.
+        if (auth('api')->check()) {
+            auth('api')->logout();
+        }
+
+        auth('web')->logout();
 
         return response()->json(['message' => 'Logged out.']);
     }
