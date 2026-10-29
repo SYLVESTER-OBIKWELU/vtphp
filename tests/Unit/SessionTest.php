@@ -113,6 +113,20 @@ final class SessionTest extends TestCase
         $this->assertFileDoesNotExist($this->tmp.DIRECTORY_SEPARATOR.$id.'.sess');
     }
 
+    public function test_file_store_gc_deletes_only_expired_files(): void
+    {
+        $store = new FileSessionStore($this->tmp, 120);
+        $store->write($fresh = str_repeat('1', 40), ['a' => 1]);
+        $store->write($stale = str_repeat('2', 40), ['a' => 1]);
+        touch($this->tmp.DIRECTORY_SEPARATOR.$stale.'.sess', time() - 3 * 3600);
+        clearstatcache();
+
+        $store->gc(7200);
+
+        $this->assertFileExists($this->tmp.DIRECTORY_SEPARATOR.$fresh.'.sess');
+        $this->assertFileDoesNotExist($this->tmp.DIRECTORY_SEPARATOR.$stale.'.sess');
+    }
+
     public function test_file_store_ignores_corrupted_files(): void
     {
         $store = new FileSessionStore($this->tmp, 120);

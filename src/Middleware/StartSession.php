@@ -40,6 +40,7 @@ final class StartSession implements MiddlewareInterface
         $response = $handler->handle($request->withAttribute('session', $session));
 
         $session->save();
+        $this->sessions->collectGarbageByLottery();
 
         $domain = $this->config->get('session.domain');
 

@@ -81,7 +81,7 @@ final class CoreServiceProvider extends ServiceProvider
 
         $this->app->singleton(
             CacheManager::class,
-            fn (Application $app) => new CacheManager($app->make(Repository::class))
+            fn (Application $app) => new CacheManager($app->make(Repository::class), $app->make(DatabaseManager::class))
         );
 
         $this->app->singleton(CookieJar::class, fn () => new CookieJar());

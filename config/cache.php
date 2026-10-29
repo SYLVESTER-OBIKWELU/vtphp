@@ -3,10 +3,18 @@
 declare(strict_types=1);
 
 return [
-    'default' => env('CACHE_DRIVER', 'array'),
+    // The store used by cache(). "database" needs the cache table: run
+    // `php forge migrate`.
+    'default' => env('CACHE_DRIVER', 'database'),
     'prefix' => env('CACHE_PREFIX', 'vtphp_cache'),
 
     'stores' => [
+        'database' => [
+            'driver' => 'database',
+            'connection' => env('CACHE_CONNECTION'), // null = the default connection
+            'table' => env('CACHE_TABLE', 'cache'),
+        ],
+
         'array' => [
             'driver' => 'array',
         ],

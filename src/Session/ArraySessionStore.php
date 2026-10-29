@@ -28,4 +28,9 @@ final class ArraySessionStore implements SessionStoreInterface
     {
         unset($this->sessions[$id]);
     }
+
+    public function gc(int $maxLifetimeSeconds): void
+    {
+        // Nothing to collect: data never outlives the process.
+    }
 }

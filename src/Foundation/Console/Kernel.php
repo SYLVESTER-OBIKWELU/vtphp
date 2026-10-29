@@ -29,6 +29,8 @@ final class Kernel
         \VtPhp\Console\Commands\MakeMailCommand::class,
         \VtPhp\Console\Commands\MakeRequestCommand::class,
         \VtPhp\Console\Commands\StubPublishCommand::class,
+        \VtPhp\Console\Commands\CacheClearCommand::class,
+        \VtPhp\Console\Commands\SessionGcCommand::class,
         \VtPhp\Console\Commands\DbSeedCommand::class,
     ];
 

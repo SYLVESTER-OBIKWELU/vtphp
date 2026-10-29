@@ -63,6 +63,17 @@ final class FileSessionStore implements SessionStoreInterface
         }
     }
 
+    public function gc(int $maxLifetimeSeconds): void
+    {
+        foreach (glob($this->directory.\DIRECTORY_SEPARATOR.'*.sess') ?: [] as $file) {
+            $modifiedAt = @filemtime($file);
+
+            if ($modifiedAt !== false && $modifiedAt < time() - $maxLifetimeSeconds) {
+                @unlink($file);
+            }
+        }
+    }
+
     private function path(string $id): string
     {
         return $this->directory.\DIRECTORY_SEPARATOR.$id.'.sess';

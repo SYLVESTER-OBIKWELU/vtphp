@@ -17,4 +17,10 @@ interface SessionStoreInterface
     public function write(string $id, array $data): void;
 
     public function destroy(string $id): void;
+
+    /**
+     * Delete sessions idle for longer than the given number of seconds.
+     * Called occasionally (see `session.lottery`), not on every request.
+     */
+    public function gc(int $maxLifetimeSeconds): void;
 }

@@ -20,6 +20,7 @@ final class CliTest extends FeatureTestCase
         'about', 'serve', 'key:generate', 'route:list', 'migrate', 'migrate:rollback', 'migrate:status',
         'make:controller', 'make:model', 'make:resource', 'make:migration', 'make:middleware',
         'make:seeder', 'make:mail', 'make:request', 'stub:publish', 'db:seed',
+        'cache:clear', 'session:gc',
     ];
 
     private ?\Closure $sandboxAutoloader = null;
