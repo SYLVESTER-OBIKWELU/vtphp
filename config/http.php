@@ -28,6 +28,19 @@ return [
         'Cache-Control' => 'no-store',
     ],
 
+    /*
+     * CSRF protection: state-changing requests that carry the session cookie
+     * must be JSON or send X-Requested-With (see PreventRequestForgery).
+     * `except` lists paths (no leading slash, * wildcard) that skip the
+     * check, e.g. webhooks that don't rely on the session.
+     */
+    'csrf' => [
+        'enabled' => true,
+        'except' => [
+            // 'webhooks/*',
+        ],
+    ],
+
     // Strict-Transport-Security, sent only on HTTPS requests.
     'hsts' => [
         'enabled' => (bool) env('HSTS_ENABLED', true),

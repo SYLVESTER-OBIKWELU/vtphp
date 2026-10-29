@@ -143,6 +143,10 @@ abstract class FeatureTestCase extends TestCase
             $request = $request
                 ->withHeader('Content-Type', 'application/json')
                 ->withBody($factory->createStream(json_encode($json, JSON_THROW_ON_ERROR)));
+        } elseif (!in_array($method, ['GET', 'HEAD', 'OPTIONS'], true)) {
+            // Like a real JSON API client (and as PreventRequestForgery
+            // requires for cookie-authenticated writes).
+            $request = $request->withHeader('Content-Type', 'application/json');
         }
 
         foreach ($headers as $name => $value) {

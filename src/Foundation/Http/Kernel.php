@@ -13,6 +13,7 @@ use VtPhp\Middleware\AddSecurityHeaders;
 use VtPhp\Middleware\HandleCors;
 use VtPhp\Middleware\HandleExceptions;
 use VtPhp\Middleware\Pipeline;
+use VtPhp\Middleware\PreventRequestForgery;
 use VtPhp\Middleware\RequestIdMiddleware;
 use VtPhp\Middleware\StartSession;
 use VtPhp\Middleware\TrustProxies;
@@ -21,10 +22,10 @@ use VtPhp\Routing\Router;
 final class Kernel
 {
     /**
-     * Outermost first. HandleExceptions stays last so every middleware above
-     * it also wraps error responses. HandleCors sits near the top so CORS
-     * preflights are answered before sessions start, and error responses
-     * still get CORS headers.
+     * Outermost first. Everything above HandleExceptions also wraps error
+     * responses (headers, cookies, saved session); middleware below it, like
+     * PreventRequestForgery, has its exceptions rendered by it. HandleCors
+     * sits near the top so CORS preflights are answered before sessions start.
      *
      * @var array<int, class-string>
      */
@@ -36,6 +37,7 @@ final class Kernel
         AddQueuedCookiesToResponse::class,
         StartSession::class,
         HandleExceptions::class,
+        PreventRequestForgery::class,
     ];
 
     public function __construct(
