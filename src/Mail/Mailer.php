@@ -7,6 +7,9 @@ namespace VtPhp\Mail;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Mailer\Mailer as SymfonyMailer;
 use Symfony\Component\Mailer\Transport;
+use Symfony\Component\Mailer\Transport\Smtp\SmtpTransport;
+use Symfony\Component\Mailer\Transport\Smtp\Stream\SocketStream;
+use Symfony\Component\Mailer\Transport\TransportInterface;
 use Symfony\Component\Mime\Email;
 use VtPhp\Config\Repository;
 
@@ -45,8 +48,23 @@ final class Mailer
             ->subject($mailable->getSubject())
             ->html($mailable->render());
 
-        $transport = Transport::fromDsn($this->dsn($settings));
-        (new SymfonyMailer($transport))->send($email);
+        (new SymfonyMailer($this->transport($settings)))->send($email);
+    }
+
+    /**
+     * @param array<string, mixed> $settings A `mail.mailers.*` entry.
+     */
+    public function transport(array $settings): TransportInterface
+    {
+        $transport = Transport::fromDsn(self::dsn($settings));
+
+        // Without this a hung SMTP server holds the request for PHP's
+        // default_socket_timeout (60 s).
+        if ($transport instanceof SmtpTransport && ($stream = $transport->getStream()) instanceof SocketStream) {
+            $stream->setTimeout((float) ($settings['timeout'] ?? 10));
+        }
+
+        return $transport;
     }
 
     /**
@@ -80,15 +98,24 @@ final class Mailer
     }
 
     /**
+     * MAIL_ENCRYPTION: "ssl"/"smtps" = implicit TLS (usually port 465);
+     * "tls"/"starttls" = STARTTLS required; empty = STARTTLS whenever the
+     * server offers it.
+     *
      * @param array<string, mixed> $settings
      */
-    private function dsn(array $settings): string
+    public static function dsn(array $settings): string
     {
-        $user = rawurlencode((string) ($settings['username'] ?? ''));
-        $pass = rawurlencode((string) ($settings['password'] ?? ''));
+        $user = (string) ($settings['username'] ?? '');
+        $pass = (string) ($settings['password'] ?? '');
         $host = (string) ($settings['host'] ?? '127.0.0.1');
-        $port = (string) ($settings['port'] ?? 25);
+        $port = (int) ($settings['port'] ?? 25);
+        $encryption = strtolower((string) ($settings['encryption'] ?? ''));
 
-        return "smtp://{$user}:{$pass}@{$host}:{$port}";
+        $scheme = in_array($encryption, ['ssl', 'smtps'], true) ? 'smtps' : 'smtp';
+        $auth = $user !== '' ? rawurlencode($user).':'.rawurlencode($pass).'@' : '';
+        $query = in_array($encryption, ['tls', 'starttls'], true) ? '?require_tls=true' : '';
+
+        return "{$scheme}://{$auth}{$host}:{$port}{$query}";
     }
 }

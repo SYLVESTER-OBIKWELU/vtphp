@@ -12,7 +12,11 @@ return [
             'port' => (int) env('MAIL_PORT', 2525),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
+            // "ssl" (implicit TLS, port 465), "tls" (require STARTTLS), or
+            // empty (STARTTLS when the server offers it).
             'encryption' => env('MAIL_ENCRYPTION'),
+            // Seconds to wait on the SMTP server before giving up.
+            'timeout' => (float) env('MAIL_TIMEOUT', 10),
         ],
 
         'log' => [
