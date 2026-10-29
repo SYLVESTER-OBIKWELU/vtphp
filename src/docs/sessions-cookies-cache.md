@@ -67,6 +67,10 @@ cache()->remember('expensive-key', 60, function () {
 cache()->store('redis')->get('key'); // a specific named store, bypassing 'default'
 ```
 
+Any string works as a key, including Laravel-style `user:1` or `posts/latest`.
+Characters that PSR-16 reserves (`{}()/\@:`) are URL-encoded before they
+reach the store, so distinct keys never collide.
+
 Supported drivers (`CACHE_DRIVER` / `config/cache.php`'s `stores`):
 
 | Driver  | Notes                                                          |

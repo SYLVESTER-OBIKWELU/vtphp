@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace VtPhp\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use VtPhp\Cache\CacheManager;
 use VtPhp\Config\Repository;
@@ -136,13 +135,37 @@ final class CacheTest extends TestCase
         $this->cache()->store('bogus');
     }
 
-    #[Group('defect')]
-    public function test_colon_namespaced_keys_are_accepted(): void
+    public function test_keys_may_contain_psr16_reserved_characters(): void
     {
-        // Psr16Cache forbids {}()/\@: in keys, so the common "user:1" style throws.
-        $cache = $this->cache();
-        $cache->put('user:1', 'Ada');
+        foreach (['array', 'file'] as $store) {
+            $cache = $this->cache($store);
 
-        $this->assertSame('Ada', $cache->get('user:1'));
+            foreach (['user:1', 'posts/latest', 'a@b', '{tag}', '(x)', 'back\\slash', 'with space'] as $key) {
+                $cache->put($key, "value of {$key}");
+                $this->assertTrue($cache->has($key), "{$store}: {$key}");
+                $this->assertSame("value of {$key}", $cache->get($key), "{$store}: {$key}");
+                $this->assertSame("value of {$key}", $cache->remember($key, 60, fn () => 'recomputed'), "{$store}: {$key}");
+            }
+
+            $this->assertTrue($cache->forget('user:1'));
+            $this->assertFalse($cache->has('user:1'));
+        }
+    }
+
+    public function test_encoded_keys_never_collide_and_multi_operations_round_trip(): void
+    {
+        $store = $this->cache()->store();
+        $store->set('a:b', 'colon');
+        $store->set('a%3Ab', 'literal percent');
+
+        $this->assertSame('colon', $store->get('a:b'));
+        $this->assertSame('literal percent', $store->get('a%3Ab'));
+
+        $this->assertTrue($store->setMultiple(['user:1' => 'Ada', 'user:2' => 'Grace']));
+        $this->assertSame(['user:1' => 'Ada', 'user:2' => 'Grace', 'user:3' => 'none'], iterator_to_array((function () use ($store) {
+            yield from $store->getMultiple(['user:1', 'user:2', 'user:3'], 'none');
+        })()));
+        $this->assertTrue($store->deleteMultiple(['user:1', 'user:2']));
+        $this->assertFalse($store->has('user:1'));
     }
 }

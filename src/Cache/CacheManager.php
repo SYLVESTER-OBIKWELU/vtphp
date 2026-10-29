@@ -97,7 +97,7 @@ final class CacheManager
             default => throw new \InvalidArgumentException("Unsupported cache driver [{$driver}] for store [{$name}]."),
         };
 
-        return new Psr16Cache($adapter);
+        return new KeyEncodingCache(new Psr16Cache($adapter));
     }
 
     /**
