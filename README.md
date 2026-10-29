@@ -267,12 +267,11 @@ config files and `.env` keys for several of them are already scaffolded in
 composer test    # phpunit
 composer stan     # phpstan analyse
 composer fmt      # php-cs-fixer fix
-
-php vendor/bin/phpunit --exclude-group defect   # everything that works
-php vendor/bin/phpunit --group defect           # known bugs, captured as failing tests
 ```
 
 `tests/Unit` covers each subsystem in isolation. `tests/Feature` boots the real
 app against a temporary SQLite database and sends requests through the HTTP
-kernel. Tests in the `defect` group document known bugs and fail until those
-bugs are fixed.
+kernel. To record a known bug before fixing it, add a failing test tagged
+`#[Group('defect')]`. Run `phpunit --exclude-group defect` to check everything
+else still passes, and remove the tag once the fix lands. The group is
+currently empty.
