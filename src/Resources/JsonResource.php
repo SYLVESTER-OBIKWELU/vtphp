@@ -7,6 +7,12 @@ namespace VtPhp\Resources;
 use VtPhp\Http\JsonResponse;
 use VtPhp\Pagination\LengthAwarePaginator;
 
+/**
+ * Subclasses must keep the single-argument constructor, since make() and
+ * ResourceCollection instantiate them via `new static($resource)`.
+ *
+ * @phpstan-consistent-constructor
+ */
 abstract class JsonResource
 {
     protected int $status = 200;

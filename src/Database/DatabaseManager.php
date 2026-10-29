@@ -34,6 +34,13 @@ final class DatabaseManager
         return $this->connections[$name];
     }
 
+    /**
+     * @template T
+     *
+     * @param \Closure(Connection): T $callback
+     *
+     * @return T
+     */
     public function transaction(\Closure $callback, ?string $name = null): mixed
     {
         return $this->connection($name)->transactional($callback);
