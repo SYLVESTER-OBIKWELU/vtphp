@@ -47,6 +47,10 @@ final class ValidatorTest extends TestCase
         yield 'date: valid' => ['date', '2026-10-29', true];
         yield 'date: invalid' => ['date', 'not a date', false];
         yield 'nullable: null skips other rules' => ['nullable|string|email', null, true];
+        yield 'max_bytes: ascii at limit' => ['max_bytes:72', str_repeat('a', 72), true];
+        yield 'max_bytes: ascii over limit' => ['max_bytes:72', str_repeat('a', 73), false];
+        yield 'max_bytes: 37 two-byte chars' => ['max_bytes:72', str_repeat('ä', 37), false];
+        yield 'max_bytes: 36 two-byte chars' => ['max_bytes:72', str_repeat('ä', 36), true];
         yield 'pipe syntax: all pass' => ['required|string|max:5', 'hello', true];
         yield 'pipe syntax: one fails' => ['required|string|max:5', 'hello!', false];
     }

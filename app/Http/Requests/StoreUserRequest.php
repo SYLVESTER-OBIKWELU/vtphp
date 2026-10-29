@@ -16,7 +16,7 @@ final class StoreUserRequest extends FormRequest
         return [
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:8|max_bytes:72|confirmed',
         ];
     }
 }

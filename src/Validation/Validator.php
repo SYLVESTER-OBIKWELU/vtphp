@@ -134,6 +134,9 @@ final class Validator
             'in' => is_scalar($value) && in_array((string) $value, explode(',', (string) $param), true),
             'date' => is_string($value) && strtotime($value) !== false,
             'confirmed' => $value === ($this->data[$field.'_confirmation'] ?? null),
+            // Byte length, e.g. max_bytes:72 for passwords: bcrypt silently
+            // ignores everything past byte 72, and max:N counts characters.
+            'max_bytes' => !is_string($value) || strlen($value) <= (int) $param,
             'unique' => !$this->existsInDatabase($field, $value, (string) $param, withIgnore: true),
             'exists' => $this->existsInDatabase($field, $value, (string) $param, withIgnore: false),
             default => throw new \InvalidArgumentException("Unknown validation rule [{$name}] on field [{$field}]."),
@@ -179,6 +182,7 @@ final class Validator
             'in' => "The selected {$field} is invalid.",
             'date' => "The {$field} field must be a valid date.",
             'confirmed' => "The {$field} confirmation does not match.",
+            'max_bytes' => "The {$field} field must not be longer than {$param} bytes (accented letters and emoji take more than one).",
             'unique' => "The {$field} has already been taken.",
             'exists' => "The selected {$field} is invalid.",
             default => "The {$field} field is invalid.",

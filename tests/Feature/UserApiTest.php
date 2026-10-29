@@ -64,6 +64,21 @@ final class UserApiTest extends FeatureTestCase
         $this->assertSame(['The password confirmation does not match.'], $this->body($response)['error']['errors']['password']);
     }
 
+    public function test_passwords_over_72_bytes_are_rejected_not_silently_truncated(): void
+    {
+        $long = str_repeat('a', 72).'SECRET-TAIL';
+        $response = $this->request('POST', '/api/v1/users', ['name' => 'Long', 'email' => 'long@example.com', 'password' => $long, 'password_confirmation' => $long]);
+
+        $this->assertErrorCode($response, 422, 'VALIDATION_ERROR');
+        $this->assertStringContainsString('72 bytes', $this->body($response)['error']['errors']['password'][0]);
+
+        $emoji = str_repeat('🔒', 19); // 19 characters, 76 bytes
+        $this->assertSame(422, $this->request('POST', '/api/v1/users', ['name' => 'E', 'email' => 'e@example.com', 'password' => $emoji, 'password_confirmation' => $emoji])->getStatusCode());
+
+        $max = str_repeat('a', 72);
+        $this->assertSame(201, $this->request('POST', '/api/v1/users', ['name' => 'Max', 'email' => 'max@example.com', 'password' => $max, 'password_confirmation' => $max])->getStatusCode());
+    }
+
     public function test_store_rejects_a_duplicate_email(): void
     {
         $this->createUser('ada@example.com');
