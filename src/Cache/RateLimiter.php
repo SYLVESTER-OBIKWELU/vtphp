@@ -8,13 +8,16 @@ use Psr\SimpleCache\CacheInterface;
 use VtPhp\Config\Repository;
 
 /**
- * Counts attempts per key in fixed time windows, in the cache store named by
- * `rate_limiting.store` (default: the default cache store). Use a store that
- * every app server shares (database, redis) so limits hold across servers.
+ * Counts attempts per key, like Laravel's RateLimiter: a key's window
+ * starts at its first attempt and lasts `decaySeconds`, after which the
+ * count starts over. (Windows aligned to the clock would let a burst
+ * straddling a boundary get twice the limit in a few seconds.)
  *
- * Counting is read-then-write, so a burst of perfectly simultaneous requests
- * can slip a few past the limit; that is acceptable for abuse protection, not
- * for exact quotas.
+ * Counts live in the cache store named by `rate_limiting.store` (default:
+ * the default cache store). Use a store every app server shares (database,
+ * redis) so limits hold across servers. Counting is read-then-write, so a
+ * burst of perfectly simultaneous requests can slip a few past the limit;
+ * that is fine for abuse protection, not for exact quotas.
  */
 final class RateLimiter
 {
@@ -31,34 +34,50 @@ final class RateLimiter
      */
     public function hit(string $key, int $maxAttempts, int $decaySeconds): array
     {
-        $decaySeconds = max(1, $decaySeconds);
         $now = time();
-        $retryAfter = $decaySeconds - ($now % $decaySeconds);
-        $windowKey = $this->windowKey($key, $decaySeconds, $now);
+        $state = $this->state($key, $now);
 
-        $attempts = (int) $this->store()->get($windowKey, 0) + 1;
-        $this->store()->set($windowKey, $attempts, $retryAfter + 1);
+        if ($state === null) {
+            $state = ['count' => 0, 'reset_at' => $now + max(1, $decaySeconds)];
+        }
+
+        ++$state['count'];
+        $this->store()->set($this->cacheKey($key), $state, max(1, $state['reset_at'] - $now));
 
         return [
-            'allowed' => $attempts <= $maxAttempts,
-            'remaining' => max(0, $maxAttempts - $attempts),
-            'retry_after' => $retryAfter,
+            'allowed' => $state['count'] <= $maxAttempts,
+            'remaining' => max(0, $maxAttempts - $state['count']),
+            'retry_after' => max(1, $state['reset_at'] - $now),
         ];
     }
 
-    public function attempts(string $key, int $decaySeconds): int
+    public function attempts(string $key): int
     {
-        return (int) $this->store()->get($this->windowKey($key, max(1, $decaySeconds), time()), 0);
+        return $this->state($key, time())['count'] ?? 0;
     }
 
-    public function clear(string $key, int $decaySeconds): void
+    public function clear(string $key): void
     {
-        $this->store()->delete($this->windowKey($key, max(1, $decaySeconds), time()));
+        $this->store()->delete($this->cacheKey($key));
     }
 
-    private function windowKey(string $key, int $decaySeconds, int $now): string
+    /**
+     * @return array{count: int, reset_at: int}|null The live window, or null if none/expired.
+     */
+    private function state(string $key, int $now): ?array
     {
-        return 'rate:'.sha1($key).':'.intdiv($now, $decaySeconds);
+        $state = $this->store()->get($this->cacheKey($key));
+
+        if (!is_array($state) || !isset($state['count'], $state['reset_at']) || (int) $state['reset_at'] <= $now) {
+            return null;
+        }
+
+        return ['count' => (int) $state['count'], 'reset_at' => (int) $state['reset_at']];
+    }
+
+    private function cacheKey(string $key): string
+    {
+        return 'rate:'.sha1($key);
     }
 
     private function store(): CacheInterface

@@ -41,20 +41,46 @@ final class RateLimiterTest extends TestCase
         $third = $limiter->hit('login|x', 2, 60);
         $this->assertFalse($third['allowed']);
         $this->assertSame(0, $third['remaining']);
-        $this->assertSame(3, $limiter->attempts('login|x', 60));
+        $this->assertSame(3, $limiter->attempts('login|x'));
 
         $this->assertTrue($limiter->hit('login|y', 2, 60)['allowed'], 'Keys are independent.');
     }
 
-    public function test_clear_resets_the_current_window(): void
+    public function test_the_window_starts_at_the_first_attempt_not_the_clock(): void
+    {
+        $limiter = $this->limiter();
+
+        // Wherever we are in the current minute, a fresh key gets the full window.
+        $first = $limiter->hit('fresh', 5, 60);
+        $this->assertGreaterThanOrEqual(59, $first['retry_after']);
+
+        $later = $limiter->hit('fresh', 5, 60);
+        $this->assertLessThanOrEqual($first['retry_after'], $later['retry_after'], 'Later hits keep the same reset time.');
+    }
+
+    public function test_an_expired_window_starts_over(): void
+    {
+        $config = new Repository(['cache' => ['default' => 'array', 'stores' => ['array' => ['driver' => 'array']]]]);
+        $cache = new CacheManager($config);
+        $limiter = new RateLimiter($cache, $config);
+
+        $cache->store()->set('rate:'.sha1('old'), ['count' => 99, 'reset_at' => time() - 1]);
+
+        $result = $limiter->hit('old', 5, 60);
+        $this->assertTrue($result['allowed']);
+        $this->assertSame(4, $result['remaining']);
+        $this->assertSame(1, $limiter->attempts('old'));
+    }
+
+    public function test_clear_resets_the_window(): void
     {
         $limiter = $this->limiter();
         $limiter->hit('k', 1, 60);
         $limiter->hit('k', 1, 60);
 
-        $limiter->clear('k', 60);
+        $limiter->clear('k');
 
-        $this->assertSame(0, $limiter->attempts('k', 60));
+        $this->assertSame(0, $limiter->attempts('k'));
         $this->assertTrue($limiter->hit('k', 1, 60)['allowed']);
     }
 
