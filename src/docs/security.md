@@ -256,6 +256,8 @@ password `password`, never runs in production, even with `--force`.
   `redis`).
 - `CORS_ALLOWED_ORIGINS` limited to your own frontends.
 - Real email settings with `MAIL_ENCRYPTION` set to `ssl` or `tls`.
+- `SWAGGER_ENABLED=false`, or the docs protected with middleware, unless your
+  API is public. See [API docs](api-docs.md#in-production).
 
 ## Next steps
 

@@ -158,8 +158,8 @@ public function show(Post $post): PostResource
 
 ## Groups: share a prefix or middleware
 
-`group()` applies the same URL prefix, middleware or name prefix to many
-routes at once. This is how the sample app puts everything under `/api/v1`:
+`group()` applies the same URL prefix, middleware, name prefix or docs
+section (`tag`) to many routes at once. This is how the sample app puts everything under `/api/v1`:
 
 ```php
 // routes/api.php
@@ -173,6 +173,15 @@ $router->group(['prefix' => '/admin', 'middleware' => [Authenticate::class], 'as
 
 Groups can be nested; prefixes, middleware and names stack up. Include the
 dot yourself in `'as' => 'admin.'`, because names are joined exactly as written.
+
+`'tag' => 'Notes'` lists the group's routes under a "Notes" heading in the
+[API docs](api-docs.md). An inner group's tag replaces the outer one:
+
+```php
+$router->group(['tag' => 'Notes'], function (Router $router): void {
+    $router->get('/notes', [NoteController::class, 'index'], 'notes.index');
+});
+```
 
 ## Seeing your routes
 
@@ -192,6 +201,7 @@ $router->apiResource('photos', PhotoController::class, [
     'only' => ['index', 'show'],          // or 'except' => ['destroy']
     'middleware' => [Authenticate::class],
     'parameter' => 'photo_id',            // use {photo_id} instead of {photo}
+    'tag' => 'Photos',                    // the section in the API docs
 ]);
 ```
 

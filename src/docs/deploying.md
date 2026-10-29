@@ -330,6 +330,7 @@ sudo systemctl restart myapi-worker   # if you run a queue worker
 - [ ] `storage/` writable by the web server
 - [ ] Sessions, cache and rate limits on a shared store (`database` or `redis`)
 - [ ] `CORS_ALLOWED_ORIGINS` lists only your frontends
+- [ ] `SWAGGER_ENABLED=false`, unless you mean to publish your API docs
 - [ ] Real SMTP settings with `MAIL_ENCRYPTION`
 - [ ] `QUEUE_CONNECTION=database` and a queue worker kept running (or `sync`, on purpose)
 - [ ] OPcache on, logs rotated

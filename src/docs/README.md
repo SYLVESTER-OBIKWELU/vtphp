@@ -44,6 +44,7 @@ whatever you need.
 
 ## 5. Reference and advanced topics
 
+- [API docs (Swagger)](api-docs.md): an interactive page describing every endpoint, built for you.
 - [The forge CLI](cli.md): every `php forge` command.
 - [Container and service providers](container.md): how VtPhp creates objects for you.
 
@@ -64,6 +65,7 @@ whatever you need.
 | **Policy** | A class of rules about who may do what with a model. |
 | **Queue / job** | A to-do list of background work / one item of that work. |
 | **Pagination** | Sending a long list one page at a time. |
+| **OpenAPI / Swagger** | A standard description of an API / the web page that displays it. |
 | **`.env`** | Your private settings file. |
 
 The design notes behind the framework (goals, architecture and roadmap) are

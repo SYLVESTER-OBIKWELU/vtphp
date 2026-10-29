@@ -87,6 +87,8 @@ All guides live in [src/docs](src/docs/README.md), in learning order:
 
 - **Routing:** route files, `apiResource()` for the five standard endpoints,
   and automatic lookup of records from URLs (with a `404` if missing).
+- **API docs:** an interactive Swagger page at `/api-docs`, built from your
+  routes, form requests and resources (`SWAGGER_ENABLED=true`).
 - **Pagination:** Eloquent's `paginate()` with `meta` and `links` in the JSON.
 - **Validation:** form request classes with Laravel-style rules
   (`required|email|unique:users,email`), checked before your code runs.
@@ -128,9 +130,8 @@ See [Authentication](src/docs/authentication.md) for how it all works.
 
 ## Not available yet
 
-To save you looking: model factories, events, file storage drivers,
-config/route caching, and generated API documentation (OpenAPI) aren't built
-yet. The [design notes](src/docs/php_api_framework_blueprint.md)
+To save you looking: model factories, events, file storage drivers and
+config/route caching aren't built yet. The [design notes](src/docs/php_api_framework_blueprint.md)
 describe the roadmap.
 
 ## Development

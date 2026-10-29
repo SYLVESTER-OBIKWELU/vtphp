@@ -23,6 +23,7 @@ Add `--help` to any command to see its options, for example
 php forge about          # app name, environment, debug mode, PHP version
 php forge serve          # start a development server (Ctrl+C to stop)
 php forge route:list     # show every URL your app answers
+php forge swagger:generate  # write the API docs (OpenAPI) to storage/api-docs/openapi.json
 php forge key:generate   # create a new APP_KEY in .env
 ```
 
