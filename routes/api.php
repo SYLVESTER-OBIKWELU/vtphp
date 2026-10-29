@@ -12,7 +12,9 @@ use VtPhp\Routing\Router;
 /** @var Router $router */
 
 $router->group(['prefix' => '/api/v1'], function (Router $router): void {
-    $router->apiResource('users', UserController::class);
+    // Sign-up is public; everything else needs a logged-in user.
+    $router->post('/users', [UserController::class, 'store'], 'users.store');
+    $router->apiResource('users', UserController::class, ['except' => ['store'], 'middleware' => [Authenticate::class]]);
 
     $router->post('/login', [AuthController::class, 'login'], 'auth.login');
     $router->post('/logout', [AuthController::class, 'logout'], 'auth.logout');

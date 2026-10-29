@@ -61,9 +61,18 @@ $router->group(['middleware' => [Authenticate::class]], function (Router $router
 });
 ```
 
-> **Note:** the sample `users` resource in `routes/api.php` is currently
-> registered *without* `Authenticate`, so anyone can list, edit or delete
-> users. Add the middleware as shown above before deploying.
+The sample `routes/api.php` keeps sign-up (`POST /users`) public and puts the
+rest of the `users` resource behind `Authenticate`. Authorization ("may *this*
+user do it?") is a separate check. `UpdateUserRequest::authorize()` and
+`UserController::destroy()` only let users change their own account, and
+anything else gets `403 FORBIDDEN`:
+
+```php
+public function authorize(): bool
+{
+    return (string) auth()->id() === (string) $this->route('user');
+}
+```
 
 ## User providers
 

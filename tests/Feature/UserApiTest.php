@@ -10,18 +10,29 @@ use VtPhp\Tests\Support\FeatureTestCase;
 
 final class UserApiTest extends FeatureTestCase
 {
-    public function test_index_starts_empty_and_lists_users_in_id_order(): void
+    /**
+     * Create a user and log in as them.
+     *
+     * @return array<string, mixed>
+     */
+    private function signedInUser(string $email = 'ada@example.com', string $name = 'Ada Lovelace'): array
     {
-        $this->assertSame(['data' => []], $this->body($this->request('GET', '/api/v1/users')));
+        $user = $this->createUser($email, 'password123', $name);
+        $this->assertSame(200, $this->login($email, 'password123')->getStatusCode());
 
+        return $user;
+    }
+
+    public function test_index_lists_users_in_id_order(): void
+    {
         $this->createUser('grace@example.com', name: 'Grace Hopper');
-        $this->createUser('ada@example.com', name: 'Ada Lovelace');
+        $this->signedInUser('ada@example.com');
 
         $emails = array_column($this->body($this->request('GET', '/api/v1/users'))['data'], 'email');
         $this->assertSame(['grace@example.com', 'ada@example.com'], $emails);
     }
 
-    public function test_store_creates_a_user_and_hashes_the_password(): void
+    public function test_sign_up_is_public_and_hashes_the_password(): void
     {
         $user = $this->createUser('ada@example.com', 'password123');
 
@@ -78,9 +89,33 @@ final class UserApiTest extends FeatureTestCase
         $this->assertFalse($user['email_verified'], 'Unvalidated fields must not be mass-assigned.');
     }
 
-    public function test_put_and_patch_both_update(): void
+    public function test_user_management_requires_authentication(): void
     {
         $user = $this->createUser();
+        $this->cookies = [];
+
+        $this->assertErrorCode($this->request('GET', '/api/v1/users'), 401, 'UNAUTHENTICATED');
+        $this->assertErrorCode($this->request('GET', "/api/v1/users/{$user['id']}"), 401, 'UNAUTHENTICATED');
+        $this->assertErrorCode($this->request('PATCH', "/api/v1/users/{$user['id']}", ['name' => 'x']), 401, 'UNAUTHENTICATED');
+        $this->assertErrorCode($this->request('DELETE', "/api/v1/users/{$user['id']}"), 401, 'UNAUTHENTICATED');
+        $this->assertNotNull(User::query()->find($user['id']));
+    }
+
+    public function test_users_cannot_edit_or_delete_someone_else(): void
+    {
+        $grace = $this->createUser('grace@example.com', name: 'Grace Hopper');
+        $this->signedInUser('ada@example.com');
+
+        $this->assertErrorCode($this->request('PATCH', "/api/v1/users/{$grace['id']}", ['name' => 'Hacked']), 403, 'FORBIDDEN');
+        $this->assertErrorCode($this->request('DELETE', "/api/v1/users/{$grace['id']}"), 403, 'FORBIDDEN');
+        $this->assertSame('Grace Hopper', User::query()->find($grace['id'])?->name);
+
+        $this->assertSame(200, $this->request('GET', "/api/v1/users/{$grace['id']}")->getStatusCode(), 'Viewing other users is allowed.');
+    }
+
+    public function test_put_and_patch_both_update(): void
+    {
+        $user = $this->signedInUser();
 
         $this->assertSame('Via Put', $this->body($this->request('PUT', "/api/v1/users/{$user['id']}", ['name' => 'Via Put']))['data']['name']);
         $this->assertSame('Via Patch', $this->body($this->request('PATCH', "/api/v1/users/{$user['id']}", ['name' => 'Via Patch']))['data']['name']);
@@ -88,7 +123,7 @@ final class UserApiTest extends FeatureTestCase
 
     public function test_show_returns_a_user_or_404(): void
     {
-        $user = $this->createUser();
+        $user = $this->signedInUser();
 
         $this->assertSame($user, $this->body($this->request('GET', "/api/v1/users/{$user['id']}"))['data']);
         $this->assertErrorCode($this->request('GET', '/api/v1/users/999'), 404, 'NOT_FOUND');
@@ -96,7 +131,7 @@ final class UserApiTest extends FeatureTestCase
 
     public function test_update_changes_only_the_given_fields(): void
     {
-        $user = $this->createUser();
+        $user = $this->signedInUser();
 
         $updated = $this->body($this->request('PATCH', "/api/v1/users/{$user['id']}", ['name' => 'Countess Ada']))['data'];
 
@@ -106,8 +141,8 @@ final class UserApiTest extends FeatureTestCase
 
     public function test_update_validates_rejects_conflicts_and_unknown_users(): void
     {
-        $ada = $this->createUser('ada@example.com');
         $this->createUser('grace@example.com');
+        $ada = $this->signedInUser('ada@example.com');
 
         $this->assertErrorCode($this->request('PATCH', "/api/v1/users/{$ada['id']}", ['email' => 'bad']), 422, 'VALIDATION_ERROR');
         $this->assertErrorCode($this->request('PATCH', "/api/v1/users/{$ada['id']}", ['email' => 'grace@example.com']), 422, 'VALIDATION_ERROR');
@@ -118,32 +153,22 @@ final class UserApiTest extends FeatureTestCase
         $this->assertSame(200, $same->getStatusCode(), 'Re-submitting your own email is not a conflict.');
     }
 
-    public function test_destroy_deletes_the_user(): void
+    public function test_destroy_deletes_your_own_account_and_ends_the_session(): void
     {
-        $user = $this->createUser();
+        $user = $this->signedInUser();
 
         $response = $this->request('DELETE', "/api/v1/users/{$user['id']}");
         $this->assertSame(204, $response->getStatusCode());
         $this->assertSame('', (string) $response->getBody());
+        $this->assertNull(User::query()->find($user['id']));
 
-        $this->assertErrorCode($this->request('GET', "/api/v1/users/{$user['id']}"), 404, 'NOT_FOUND');
-        $this->assertErrorCode($this->request('DELETE', "/api/v1/users/{$user['id']}"), 404, 'NOT_FOUND');
-    }
-
-    #[Group('defect')]
-    public function test_user_management_requires_authentication(): void
-    {
-        // src/docs/authentication.md says these routes are guarded; they are not.
-        // Anyone can list, edit or delete any account.
-        $user = $this->createUser();
-        $this->cookies = [];
-
-        $this->assertSame(401, $this->request('GET', '/api/v1/users')->getStatusCode());
-        $this->assertSame(401, $this->request('DELETE', "/api/v1/users/{$user['id']}")->getStatusCode());
+        $this->assertErrorCode($this->request('GET', '/api/v1/me'), 401, 'UNAUTHENTICATED');
     }
 
     public function test_a_non_numeric_id_is_a_404_not_a_500(): void
     {
+        $this->signedInUser();
+
         $this->assertErrorCode($this->request('GET', '/api/v1/users/abc'), 404, 'NOT_FOUND');
         $this->assertErrorCode($this->request('PATCH', '/api/v1/users/abc', ['name' => 'x']), 404, 'NOT_FOUND');
     }

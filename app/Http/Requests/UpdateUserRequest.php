@@ -8,6 +8,14 @@ use VtPhp\Http\FormRequest;
 
 final class UpdateUserRequest extends FormRequest
 {
+    /**
+     * Users may only edit their own account.
+     */
+    public function authorize(): bool
+    {
+        return (string) auth()->id() === (string) $this->route('user');
+    }
+
     public function rules(): array
     {
         $userId = (string) $this->route('user');

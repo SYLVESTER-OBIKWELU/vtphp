@@ -16,6 +16,7 @@ final class EmailVerificationTest extends FeatureTestCase
     {
         parent::setUp();
         $this->user = $this->createUser('grace@example.com', name: 'Grace Hopper');
+        $this->login('grace@example.com', 'password123');
     }
 
     private function sendLink(string $email = 'grace@example.com'): ?string

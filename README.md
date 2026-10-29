@@ -146,9 +146,9 @@ and email-verification endpoints under the `/api/v1` prefix:
 
 Notes:
 
-- The `users` resource is registered **without** authentication. Add the
-  `Authenticate` middleware before deploying (see
-  [authentication](src/docs/authentication.md#protecting-routes)).
+- Sign-up (`POST /users`) is public. The other `users` routes require a
+  logged-in session, and users may only update or delete their own account
+  (`403` otherwise). See [authentication](src/docs/authentication.md#protecting-routes).
 - User creation requires a `password` (min 8 chars) confirmed via
   `password_confirmation`. A taken email is a `422` (`unique` rule).
 - `forgot()` and the verification-notification endpoint respond with the same
