@@ -134,3 +134,13 @@ if (!function_exists('auth')) {
         return app(\VtPhp\Auth\AuthManager::class)->guard($guard);
     }
 }
+
+if (!function_exists('gate')) {
+    /**
+     * The authorization gate: gate()->allows('update', $note).
+     */
+    function gate(): \VtPhp\Auth\Access\Gate
+    {
+        return app(\VtPhp\Auth\Access\Gate::class);
+    }
+}

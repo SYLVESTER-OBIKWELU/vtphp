@@ -20,7 +20,7 @@ final class CliTest extends FeatureTestCase
         'about', 'serve', 'key:generate', 'route:list', 'migrate', 'migrate:rollback', 'migrate:status',
         'make:controller', 'make:model', 'make:resource', 'make:migration', 'make:middleware',
         'make:seeder', 'make:mail', 'make:request', 'stub:publish', 'db:seed',
-        'cache:clear', 'session:gc',
+        'cache:clear', 'session:gc', 'tokens:prune', 'make:policy',
     ];
 
     private ?\Closure $sandboxAutoloader = null;
@@ -299,6 +299,32 @@ final class CliTest extends FeatureTestCase
         $this->assertFileDoesNotExist($app->appPath('Http/Controllers/TagController.php'));
     }
 
+    public function test_make_policy_and_make_model_p(): void
+    {
+        $app = $this->sandbox();
+        $name = $this->uniqueName('Doc');
+
+        [$code] = $this->forge(['command' => 'make:policy', 'name' => 'Plain'], $app);
+        $this->assertSame(0, $code);
+        $this->assertStringContainsString('final class PlainPolicy', $this->assertValidPhp($app->appPath('Policies/PlainPolicy.php')));
+
+        $this->forge(['command' => 'make:model', 'name' => $name, '-p' => true], $app);
+        $policy = $this->assertValidPhp($app->appPath("Policies/{$name}Policy.php"));
+        foreach (['viewAny(User $user)', "view(User \$user, {$name} \$", 'create(User $user)', "update(User \$user, {$name} \$", "delete(User \$user, {$name} \$"] as $method) {
+            $this->assertStringContainsString($method, $policy);
+        }
+
+        // The generated policy is picked up automatically by naming convention.
+        $modelClass = "App\\Models\\{$name}";
+        $user = new User(['name' => 'Ada', 'email' => 'ada@example.com']);
+        $this->assertTrue(gate()->forUser($user)->allows('view', new $modelClass()), 'view() returns true by default.');
+        $this->assertFalse(gate()->forUser($user)->allows('update', new $modelClass()), 'update() denies until you write the rule.');
+
+        [$code, $output] = $this->forge(['command' => 'make:policy', 'name' => 'PlainPolicy'], $app);
+        $this->assertSame(1, $code);
+        $this->assertStringContainsString('already exists', $output);
+    }
+
     public function test_make_model_all_scaffolds_a_working_crud_api(): void
     {
         $app = $this->sandbox();
@@ -314,6 +340,7 @@ final class CliTest extends FeatureTestCase
             "app/Http/Requests/Store{$model}Request.php",
             "app/Http/Requests/Update{$model}Request.php",
             "app/Http/Resources/{$model}Resource.php",
+            "app/Policies/{$model}Policy.php",
             "database/seeders/{$model}Seeder.php",
         ];
         foreach ($files as $file) {

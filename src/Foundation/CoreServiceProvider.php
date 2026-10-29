@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace VtPhp\Foundation;
 
 use Psr\Log\LoggerInterface;
+use VtPhp\Auth\Access\Gate;
 use VtPhp\Auth\AuthManager;
+use VtPhp\Container\BindingResolutionException;
 use VtPhp\Cache\CacheManager;
 use VtPhp\Config\Repository;
 use VtPhp\Cookie\CookieJar;
@@ -95,6 +97,16 @@ final class CoreServiceProvider extends ServiceProvider
             AuthManager::class,
             fn (Application $app) => new AuthManager($app, $app->make(Repository::class))
         );
+
+        $this->app->singleton(Gate::class, fn (Application $app) => new Gate($app, static function (): ?object {
+            // Outside an HTTP request (e.g. a console command) there is no
+            // session or token, so there is no current user.
+            try {
+                return auth()->user();
+            } catch (BindingResolutionException) {
+                return null;
+            }
+        }));
 
         $this->app->afterResolving(
             FormRequest::class,

@@ -14,7 +14,8 @@ use VtPhp\Console\Command;
  * Laravel-style model generator. Flags combine like Laravel's (-mcr, -a):
  *
  *     forge make:model Post -a        model, migration, seeder, API resource
- *                                     controller, Store/Update requests, JSON resource
+ *                                     controller, Store/Update requests, JSON
+ *                                     resource and policy
  *     forge make:model Post -mc       model, migration, empty controller
  *     forge make:model Post -mrR      model, migration, resource controller + requests
  */
@@ -24,7 +25,7 @@ final class MakeModelCommand extends Command
     protected function configure(): void
     {
         $this->addArgument('name', InputArgument::REQUIRED, 'The model name');
-        $this->addOption('all', 'a', InputOption::VALUE_NONE, 'Generate a migration, seeder, resource controller, form requests and JSON resource');
+        $this->addOption('all', 'a', InputOption::VALUE_NONE, 'Generate a migration, seeder, resource controller, form requests, JSON resource and policy');
         $this->addOption('migration', 'm', InputOption::VALUE_NONE, 'Create a new migration for the model');
         $this->addOption('seed', 's', InputOption::VALUE_NONE, 'Create a new seeder for the model');
         $this->addOption('controller', 'c', InputOption::VALUE_NONE, 'Create a new controller for the model');
@@ -32,6 +33,7 @@ final class MakeModelCommand extends Command
         $this->addOption('api', null, InputOption::VALUE_NONE, 'Alias of --resource (VtPhp controllers are API-only)');
         $this->addOption('requests', 'R', InputOption::VALUE_NONE, 'Create Store/Update form requests for the model');
         $this->addOption('json-resource', 'j', InputOption::VALUE_NONE, 'Create a JSON resource for the model');
+        $this->addOption('policy', 'p', InputOption::VALUE_NONE, 'Create an authorization policy for the model');
     }
 
     protected function handle(): int
@@ -74,6 +76,10 @@ final class MakeModelCommand extends Command
 
         if ($jsonResource && !$resourceController) {
             $this->call('make:resource', ['name' => $model, '--model' => $model]);
+        }
+
+        if ($option('policy')) {
+            $this->call('make:policy', ['name' => "{$model}Policy", '--model' => $model]);
         }
 
         return self::SUCCESS;

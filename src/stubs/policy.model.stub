@@ -1,0 +1,40 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Policies;
+
+use App\Models\{{ model }};
+use App\Models\User;
+
+/**
+ * Who may do what with {{ model }} records. Found automatically for
+ * App\Models\{{ model }}; use it with $this->authorize('update', ${{ variable }}).
+ */
+final class {{ class }}
+{
+    public function viewAny(User $user): bool
+    {
+        return true;
+    }
+
+    public function view(User $user, {{ model }} ${{ variable }}): bool
+    {
+        return true;
+    }
+
+    public function create(User $user): bool
+    {
+        return true;
+    }
+
+    public function update(User $user, {{ model }} ${{ variable }}): bool
+    {
+        return false;
+    }
+
+    public function delete(User $user, {{ model }} ${{ variable }}): bool
+    {
+        return false;
+    }
+}
