@@ -9,6 +9,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use VtPhp\Exceptions\ExceptionHandler;
 use VtPhp\Foundation\Application;
 use VtPhp\Middleware\AddQueuedCookiesToResponse;
+use VtPhp\Middleware\HandleExceptions;
 use VtPhp\Middleware\Pipeline;
 use VtPhp\Middleware\RequestIdMiddleware;
 use VtPhp\Middleware\StartSession;
@@ -16,11 +17,17 @@ use VtPhp\Routing\Router;
 
 final class Kernel
 {
-    /** @var array<int, class-string> */
+    /**
+     * Outermost first. HandleExceptions stays last so every middleware above
+     * it also wraps error responses.
+     *
+     * @var array<int, class-string>
+     */
     protected array $middleware = [
         RequestIdMiddleware::class,
         AddQueuedCookiesToResponse::class,
         StartSession::class,
+        HandleExceptions::class,
     ];
 
     public function __construct(
@@ -38,6 +45,8 @@ final class Kernel
                 ->through($this->middleware)
                 ->then(fn (ServerRequestInterface $request): ResponseInterface => $this->router->dispatch($request));
         } catch (\Throwable $e) {
+            // Last resort: a global middleware itself failed before
+            // HandleExceptions could catch it.
             return $this->exceptions->render($e, $request);
         }
     }

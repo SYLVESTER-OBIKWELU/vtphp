@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace VtPhp\Tests\Feature;
 
-use PHPUnit\Framework\Attributes\Group;
 use VtPhp\Foundation\Application;
 use VtPhp\Routing\Router;
 use VtPhp\Tests\Support\FeatureTestCase;
@@ -103,11 +102,38 @@ final class HttpKernelTest extends FeatureTestCase
         $this->assertErrorCode($response, 422, 'VALIDATION_ERROR');
     }
 
-    #[Group('defect')]
-    public function test_error_responses_keep_the_request_id(): void
+    public function test_error_responses_keep_the_request_id_and_session_cookie(): void
     {
-        // Exceptions are caught outside the global middleware, so error
-        // responses lose X-Request-ID — exactly when you need it for tracing.
-        $this->assertSame('trace-404', $this->request('GET', '/nope', null, ['X-Request-ID' => 'trace-404'])->getHeaderLine('X-Request-ID'));
+        $notFound = $this->request('GET', '/nope', null, ['X-Request-ID' => 'trace-404']);
+        $this->assertSame('trace-404', $notFound->getHeaderLine('X-Request-ID'));
+        $this->assertMatchesRegularExpression('/^vtphp_session=[a-f0-9]{40}; /', $notFound->getHeaderLine('Set-Cookie'));
+
+        $generated = $this->request('GET', '/nope')->getHeaderLine('X-Request-ID');
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{32}$/', $generated);
+    }
+
+    public function test_a_logged_500_carries_the_same_request_id_as_the_response(): void
+    {
+        $response = $this->request('GET', '/boom', null, [], function (Application $app): void {
+            $app->make(Router::class)->get('/boom', fn () => throw new \RuntimeException('boom'));
+        });
+
+        $this->assertSame(500, $response->getStatusCode());
+        $this->assertSame($response->getHeaderLine('X-Request-ID'), $this->logs->atLevel('error')[0]['context']['request_id']);
+    }
+
+    public function test_the_session_is_saved_even_when_the_request_fails(): void
+    {
+        $this->request('GET', '/remember', null, [], function (Application $app): void {
+            $app->make(Router::class)->get('/remember', function (): never {
+                session()->put('wizard_step', 2);
+
+                throw new \VtPhp\Exceptions\ConflictHttpException('Try again.');
+            });
+        });
+
+        $file = $this->tmp.'/sessions/'.$this->cookies['vtphp_session'].'.sess';
+        $this->assertFileExists($file);
+        $this->assertSame(2, unserialize((string) file_get_contents($file), ['allowed_classes' => false])['wizard_step'] ?? null);
     }
 }

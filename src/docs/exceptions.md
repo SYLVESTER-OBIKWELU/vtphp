@@ -1,8 +1,12 @@
 # Exceptions & error handling
 
-Every uncaught exception thrown during a request is caught by
-`VtPhp\Foundation\Http\Kernel::handle()` and rendered by
-`VtPhp\Exceptions\ExceptionHandler` into a consistent JSON envelope:
+Every uncaught exception thrown during a request is caught by the
+`VtPhp\Middleware\HandleExceptions` middleware and rendered by
+`VtPhp\Exceptions\ExceptionHandler` into a consistent JSON envelope. Because
+`HandleExceptions` is the innermost global middleware, error responses still
+carry `X-Request-ID` and the session cookie, and the session is still saved.
+(`Kernel::handle()` keeps a last-resort catch for failures inside the global
+middleware itself.)
 
 ```json
 {

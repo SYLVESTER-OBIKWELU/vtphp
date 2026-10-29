@@ -35,7 +35,8 @@ php forge make:middleware EnsureTokenIsValid
 ## Registering middleware
 
 - **Globally**, for every request: add the class to `$middleware` in
-  `src/Foundation/Http/Kernel.php`.
+  `src/Foundation/Http/Kernel.php`, above `HandleExceptions`, which must stay
+  last so every global middleware also wraps error responses.
 - **Per group**: pass `'middleware' => [...]` to `$router->group([...], ...)`.
 - **Per resource**: pass `['middleware' => [...]]` as `apiResource()`'s options.
 - **Per route**: pass the 4th `array $middleware` argument to
