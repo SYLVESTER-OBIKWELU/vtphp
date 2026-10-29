@@ -1,88 +1,131 @@
 # Requests & validation
 
-There's no heavyweight "Form Request" base class — instead, each request has
-a small, explicit DTO under `app/Requests/` with a static `fromRequest()`
-constructor that validates and returns a readonly object:
+## Form requests
+
+Like Laravel, a form request is a class that holds the rules for one
+endpoint. Generate one with `php forge make:request StorePostRequest`:
 
 ```php
-namespace App\Requests;
+namespace App\Http\Requests;
 
-use VtPhp\Http\Request;
-use VtPhp\Validation\Validator;
+use VtPhp\Http\FormRequest;
 
-final class CreateUserRequest
+final class StorePostRequest extends FormRequest
 {
-    private function __construct(
-        public readonly string $name,
-        public readonly string $email,
-        public readonly string $password,
-    ) {
-    }
-
-    public static function fromRequest(Request $request): self
+    public function authorize(): bool
     {
-        $data = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ])->validate();
+        return true; // return false to reject with 403 FORBIDDEN
+    }
 
-        return new self($data['name'], $data['email'], $data['password']);
+    public function rules(): array
+    {
+        return [
+            'title' => 'required|string|max:200',
+            'slug' => 'required|string|unique:posts,slug',
+            'status' => 'sometimes|in:draft,published',
+        ];
     }
 }
 ```
 
-Call it from the controller action:
+Type-hint it in a controller action. By the time the action runs, the
+request has been authorized and validated:
 
 ```php
-public function store(Request $request): UserResource
+public function store(StorePostRequest $request): PostResource
 {
-    $data = CreateUserRequest::fromRequest($request);
-    // ...
+    return PostResource::make(Post::query()->create($request->validated()))->status(201);
 }
 ```
 
-`Validator::make($data, $rules)->validate()` throws a
-`VtPhp\Exceptions\ValidationException` (422, `VALIDATION_ERROR`) when
-validation fails, which the global `ExceptionHandler` turns into a structured
-JSON error response automatically — no try/catch needed in the controller.
+- Failing validation throws a `ValidationException`, rendered as a
+  `422 VALIDATION_ERROR` with an `errors` object keyed by field.
+- `authorize()` returning `false` throws an `AuthorizationException` (`403 FORBIDDEN`).
+- `validated()` returns **only the fields that have rules**. Unexpected
+  input like `is_admin` or `id` is dropped, so passing it to `create()` or
+  `update()` is safe. `validated('title')` reads one field, with an
+  optional default.
+- A form request is still a `Request`, so `input()`, `route()`, `user()` and
+  the rest work too. Use `route()` to ignore the current record in a
+  `unique` rule on update:
 
-## `VtPhp\Http\Request`
+```php
+public function rules(): array
+{
+    return [
+        'email' => 'sometimes|email|unique:users,email,'.$this->route('user'),
+    ];
+}
+```
 
-Injected automatically into any controller action or request DTO method that
-type-hints it:
+## Inline validation
 
-| Method                                         | Description                                                 |
-| ---------------------------------------------- | ----------------------------------------------------------- |
-| `method()`                                     | HTTP method.                                                |
-| `path()`                                       | URI path.                                                   |
-| `query(string $key, mixed $default = null)`    | A single query-string value.                                |
-| `input(string $key, mixed $default = null)`    | A value from query + parsed body.                           |
-| `all()`                                        | Query params merged with parsed body.                       |
-| `json()`                                       | Parsed JSON body as an array.                               |
-| `has(string $key)`                             | Whether a key exists in `all()`.                            |
-| `header(string $key, ?string $default = null)` | A request header.                                           |
-| `cookie(string $key, ?string $default = null)` | An incoming cookie value.                                   |
-| `bearerToken()`                                | The `Bearer` token from the `Authorization` header, if any. |
-| `route(string $key, mixed $default = null)`    | A matched route parameter.                                  |
-| `psr()`                                        | The underlying PSR-7 `ServerRequestInterface`.              |
+For small endpoints, validate directly on the request:
+
+```php
+public function search(Request $request): array
+{
+    $data = $request->validate([
+        'q' => 'required|string|min:2',
+        'page' => 'nullable|integer',
+    ]);
+
+    // $data holds only `q` and `page`.
+}
+```
 
 ## Validation rules
 
-Rules are pipe-delimited strings (or arrays of strings), e.g.
-`'password' => ['required', 'string', 'min:8', 'confirmed']`. Supported
-rules: `required`, `nullable`, `string`, `integer`/`int`, `numeric`,
-`boolean`/`bool`, `array`, `email`, `max:N`, `min:N`, `in:a,b,c`, `date`,
-`confirmed` (checks `{field}_confirmation`).
+Rules are pipe-delimited strings (`'required|string|max:100'`) or arrays of strings.
 
-You can also use the validator directly without a request DTO:
+| Rule                                     | Passes when                                                                                    |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `required`                               | The value is present and not `null` or `''`.                                                   |
+| `sometimes`                              | Only validate the field if it is present (for partial updates).                                |
+| `nullable`                               | `null` is allowed; other rules are skipped when the value is `null`.                           |
+| `string`, `array`, `boolean`/`bool`      | The value has that type (`boolean` also accepts `0`, `1`, `'0'`, `'1'`).                       |
+| `integer`/`int`, `numeric`               | An integer (or digit string) / any numeric value.                                             |
+| `email`                                  | A valid email address.                                                                        |
+| `min:N`, `max:N`                         | String length (in characters) or numeric value is at least / at most N.                       |
+| `in:a,b,c`                               | The value is one of the listed options.                                                       |
+| `date`                                   | A string that `strtotime()` can parse.                                                        |
+| `confirmed`                              | Equals `{field}_confirmation`.                                                                |
+| `unique:table,column,ignoreId,idColumn`  | No row in `table` has this value. `column` defaults to the field name; `ignoreId` skips one row. |
+| `exists:table,column`                    | A row in `table` has this value.                                                              |
+
+`unique` and `exists` query through the Eloquent connection.
+
+## Using the validator directly
 
 ```php
 use VtPhp\Validation\Validator;
 
-$validator = Validator::make($data, ['email' => ['required', 'email']]);
+$validator = Validator::make($data, ['email' => 'required|email']);
 
 if ($validator->fails()) {
     $errors = $validator->errors(); // array<string, array<int, string>>
 }
+
+$clean = $validator->validated(); // throws ValidationException on failure
 ```
+
+## `VtPhp\Http\Request`
+
+Injected into any controller action that type-hints it:
+
+| Method                                         | Description                                                    |
+| ---------------------------------------------- | -------------------------------------------------------------- |
+| `validate(array $rules)`                       | Validate `all()` and return only the validated fields.         |
+| `user(?string $guard = null)`                  | The authenticated user, or `null`.                             |
+| `method()`                                     | HTTP method.                                                   |
+| `path()`                                       | URI path.                                                      |
+| `query(string $key, mixed $default = null)`    | A single query-string value.                                   |
+| `input(string $key, mixed $default = null)`    | A value from query + parsed body (the body wins).              |
+| `all()`                                        | Query params merged with the parsed body.                      |
+| `json()`                                       | Parsed JSON body as an array.                                  |
+| `has(string $key)`                             | Whether a key exists in `all()`.                               |
+| `header(string $key, ?string $default = null)` | A request header.                                              |
+| `cookie(string $key, ?string $default = null)` | An incoming cookie value.                                      |
+| `bearerToken()`                                | The `Bearer` token from the `Authorization` header, if any.    |
+| `route(string $key, mixed $default = null)`    | A raw matched route parameter (the id, not the bound model).   |
+| `psr()`                                        | The underlying PSR-7 `ServerRequestInterface`.                 |

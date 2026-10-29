@@ -47,12 +47,18 @@ final class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(UserRepositoryInterface::class, EloquentUserRepository::class);
+        $this->app->singleton(PaymentGateway::class, StripePaymentGateway::class);
     }
 }
 ```
 
-Register your provider in `bootstrap/app.php`'s provider list (alongside
+Any controller, command or class that type-hints `PaymentGateway` now
+receives the shared `StripePaymentGateway`. The container also has
+`afterResolving(Type::class, $callback)`, which runs a callback each time a
+matching object is built. The framework uses it to validate
+[form requests](validation.md) as soon as they're injected.
+
+Register your provider in the `providers` list in `config/app.php` (alongside
 `AppServiceProvider`/`RouteServiceProvider`) so it runs on every request.
 
 ## Layering: `src/` vs `app/`

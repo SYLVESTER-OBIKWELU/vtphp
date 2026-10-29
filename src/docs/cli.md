@@ -1,7 +1,7 @@
 # CLI (`forge`)
 
-`forge` is a `symfony/console` application (entry point at project root) for
-day-to-day tasks and code generation.
+`forge` is a `symfony/console` application (entry point at the project root)
+for day-to-day tasks and code generation, modeled on Laravel's Artisan.
 
 ```powershell
 php forge                     # list all available commands
@@ -13,21 +13,25 @@ php forge key:generate        # generate and write APP_KEY to .env
 
 ## Generators (`make:*`)
 
-Each generator writes a stub from the framework's `src/stubs/` into the
-appropriate `app/` subdirectory, filling in the class name and namespace.
-Run `php forge stub:publish` to copy the stubs into your project's `stubs/`
-folder; generators use a published stub instead of the framework default,
-so you can customize them (`--force` re-publishes over your changes).
-
 ```powershell
-php forge make:controller ProductController
-php forge make:model Product
-php forge make:resource ProductResource
-php forge make:middleware EnsureTokenIsValid
-php forge make:migration create_products_table
-php forge make:seeder ProductSeeder
-php forge make:mail OrderShipped
+php forge make:model Product -a                 # model + migration, seeder, resource controller,
+                                                # form requests and JSON resource (see Models)
+php forge make:controller ProductController     # also --api, --model=Product, -R, -j (see Controllers)
+php forge make:request StoreProductRequest      # app/Http/Requests
+php forge make:resource Product                 # app/Http/Resources/ProductResource.php (--model=Product)
+php forge make:middleware EnsureJson            # app/Http/Middleware
+php forge make:migration create_products_table  # infers Schema::create/table (see Migrations)
+php forge make:seeder ProductSeeder             # database/seeders
+php forge make:mail OrderShipped                # app/Mail
 ```
+
+Generators never overwrite an existing file. They print an error and exit
+with status 1 instead.
+
+Each generator renders a stub from the framework's `src/stubs/`. Run
+`php forge stub:publish` to copy the stubs into your project's `stubs/`
+folder. Generators use a published stub instead of the framework default, so
+you can customize them. `stub:publish --force` re-publishes over your changes.
 
 ## Database
 
@@ -38,15 +42,12 @@ php forge migrate:rollback   # roll back the last batch
 php forge db:seed            # run database seeders
 ```
 
-See [Migrations & seeders](migrations.md) for what the generated files look
-like and how the migration runner works.
+See [Migrations & seeders](migrations.md).
 
 ## Adding your own command
 
-Add a new class under `src/Console/Commands/` (or `app/Console/Commands/`
-for app-specific commands) extending `VtPhp\Console\Command`, annotate it
-with `#[AsCommand(name: '...', description: '...')]`, and implement
-`handle(): int`:
+Extend `VtPhp\Console\Command`, annotate the class with
+`#[AsCommand(name: '...', description: '...')]`, and implement `handle(): int`:
 
 ```php
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -58,12 +59,14 @@ final class SyncProductsCommand extends Command
     protected function handle(): int
     {
         $this->line('Syncing...');
-        // ...
+        $this->call('db:seed');   // run another command, like Laravel's $this->call()
 
         return self::SUCCESS;
     }
 }
 ```
 
-Register it in `src/Foundation/Console/Kernel.php`'s command list so
-`forge` picks it up.
+The base class gives you `$this->input`, `$this->output`, `$this->io` (a
+`SymfonyStyle`), `info()`, `line()`, `error()`, `call()`, and `generate()` for
+rendering a stub into a file. Register the command in
+`src/Foundation/Console/Kernel.php`'s command list so `forge` picks it up.

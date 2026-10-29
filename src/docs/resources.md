@@ -4,27 +4,30 @@
 collection with `ResourceCollection` (or the `::collection()` shortcut).
 
 ```php
-namespace App\Resources;
+namespace App\Http\Resources;
 
 use VtPhp\Resources\JsonResource;
 
+/**
+ * @property \App\Models\User $resource
+ */
 final class UserResource extends JsonResource
 {
     public function toArray(): array
     {
-        /** @var \App\Models\User $user */
-        $user = $this->resource;
-
         return [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'email_verified' => $user->hasVerifiedEmail(),
-            'created_at' => $user->created_at?->toIso8601String(),
+            'id' => $this->resource->id,
+            'name' => $this->resource->name,
+            'email' => $this->resource->email,
+            'email_verified' => $this->resource->hasVerifiedEmail(),
+            'created_at' => $this->resource->created_at?->toAtomString(),
         ];
     }
 }
 ```
+
+Resources live in `app/Http/Resources/`. `collection()` accepts an Eloquent
+collection, any iterable, or a paginator.
 
 Usage from a controller:
 
@@ -37,8 +40,11 @@ return UserResource::make($user)->status(201);
 Generate a new resource with:
 
 ```powershell
-php forge make:resource ProductResource
+php forge make:resource Product                  # returns (array) $this->resource
+php forge make:resource Product --model=Product  # returns $this->resource->toArray()
 ```
+
+`make:model Product -j` (or `-a`) generates the model-bound version.
 
 ## Pagination
 

@@ -6,11 +6,23 @@ built on PSR standards plus Symfony/Doctrine/Monolog components, with `illuminat
 opt-in, well-isolated dependencies for the features that benefit most from them.
 
 ```php
-#[Route(method: 'GET', path: '/users/{id}', name: 'users.show')]
-public function show(int $id): UserResource
+// routes/api.php
+$router->apiResource('users', UserController::class);
+
+// app/Http/Controllers/UserController.php
+public function store(StoreUserRequest $request): UserResource
 {
-    return UserResource::make($this->service->find($id));
+    return UserResource::make(User::query()->create($request->validated()))->status(201);
 }
+
+public function show(User $user): UserResource   // route-model binding, 404 if missing
+{
+    return UserResource::make($user);
+}
+```
+
+```powershell
+php forge make:model Product -a   # model, migration, seeder, controller, requests, resource
 ```
 
 ## Documentation
@@ -46,7 +58,11 @@ Eloquent. Swap in `mysql`/`pgsql` in `.env` for a real database.
 ## Project layout
 
 ```text
-app/            Your application code (Controllers, Services, Models, Resources, ...)
+app/            Your application code, in Laravel's layout:
+  Http/           Controllers/, Requests/ (form requests), Resources/, Middleware/
+  Mail/           Mailables
+  Models/         Eloquent models
+  Providers/      Service providers
 bootstrap/      Application bootstrap (builds the container, config, providers)
 config/         Configuration files (env-driven)
 database/       Migrations
@@ -72,13 +88,15 @@ php forge serve               # run the PHP built-in server
 php forge route:list          # list all registered routes
 php forge key:generate        # generate APP_KEY
 
-php forge make:controller UserController
-php forge make:model Product
-php forge make:resource ProductResource
+php forge make:model Product -a          # or any of -m -s -c -r -R -j
+php forge make:controller ProductController --model=Product -R -j
+php forge make:request StoreProductRequest
+php forge make:resource Product
 php forge make:middleware EnsureTokenIsValid
 php forge make:migration create_products_table
 php forge make:seeder ProductSeeder
 php forge make:mail OrderShipped
+php forge stub:publish                  # customize the generator stubs
 
 php forge migrate
 php forge migrate:status
@@ -98,16 +116,16 @@ PSR Standards + Vendor Components (Symfony Routing/Console/Dotenv, Doctrine DBAL
 
 - **Container** — `src/Container/Container.php`: PSR-11 container with reflection-based autowiring.
 - **HTTP** — PSR-7 (via `nyholm/psr7`) with a convenience `VtPhp\Http\Request` wrapper and a fluent `JsonResponse`.
-- **Routing** — `symfony/routing` underneath, plus a `#[Route]` attribute for controller-based routing.
+- **Routing** — `symfony/routing` underneath, Laravel-style route files with `apiResource()`, route-model binding, and an optional `#[Route]` attribute.
 - **Middleware** — PSR-15 pipeline (`VtPhp\Middleware\Pipeline`).
 - **Exceptions** — centralized `ExceptionHandler` mapping exceptions to a structured `{"success":false,"error":{...}}` JSON envelope.
-- **Database** — `doctrine/dbal` behind `VtPhp\Database\DatabaseManager`, with a small file-based migration runner. `illuminate/database` (Eloquent) runs alongside it via `VtPhp\Database\EloquentManager`, reading the same `config/database.php`, for applications that want ActiveRecord-style models.
-- **Validation** — a dependency-free rule-string validator (`required|string|max:100`) that throws `ValidationException`.
+- **Database** — Eloquent models (`illuminate/database`, booted by `VtPhp\Database\EloquentManager`) used directly from controllers, and Laravel-style `Schema::create()` migrations. The migration runner tracks batches through `doctrine/dbal` (`VtPhp\Database\DatabaseManager`); both read `config/database.php`.
+- **Validation** — Laravel-style `FormRequest` classes validated on injection, `$request->validate()`, and a rule-string validator (`required|string|max:100`, `unique:users,email`) that throws `ValidationException`.
 - **Resources** — `JsonResource` / `ResourceCollection` for shaping API output and pagination envelopes.
 - **Views** — `eftec/bladeone` behind `VtPhp\View\BladeEngine` for Blade-syntax templates (e.g. email bodies), resolved from `resources/views/`.
 - **Mail** — `symfony/mailer` behind `VtPhp\Mail\Mailer`, with a Laravel-style `Mailable` base class (`app/Mail/`) and a `log` transport for local dev (no SMTP server needed).
 - **Logging** — `monolog/monolog` behind `Psr\Log\LoggerInterface`.
-- **CLI** — `symfony/console` behind the `forge` binary, with stub-based `make:*` generators (controllers, models, resources, middleware, migrations, seeders, mailables).
+- **CLI** — `symfony/console` behind the `forge` binary, with Artisan-style `make:*` generators (`make:model -a` scaffolds the whole resource) rendered from `src/stubs/`.
 
 ## Sample API endpoints
 
@@ -118,18 +136,21 @@ and email-verification endpoints under the `/api/v1` prefix:
 | ------ | ----------------------------------------- | ------------------------------------------------------------------------ |
 | GET    | `/api/v1/users`                           | List users                                                               |
 | POST   | `/api/v1/users`                           | Create a user (`name`, `email`, `password`, `password_confirmation`)     |
-| GET    | `/api/v1/users/{id}`                      | Show a user                                                              |
-| PATCH  | `/api/v1/users/{id}`                      | Update a user (`name`, `email` — both optional)                          |
-| DELETE | `/api/v1/users/{id}`                      | Delete a user (`204 No Content`)                                         |
+| GET    | `/api/v1/users/{user}`                    | Show a user                                                              |
+| PUT/PATCH | `/api/v1/users/{user}`                 | Update a user (`name`, `email` — both optional)                          |
+| DELETE | `/api/v1/users/{user}`                    | Delete a user (`204 No Content`)                                         |
 | POST   | `/api/v1/password/forgot`                 | Request a password reset email (`email`)                                 |
 | POST   | `/api/v1/password/reset`                  | Reset a password (`email`, `token`, `password`, `password_confirmation`) |
 | POST   | `/api/v1/email/verification-notification` | (Re)send the email verification link (`email`)                           |
-| GET    | `/api/v1/email/verify/{id}/{hash}`        | Verify an email address via the emailed link                             |
+| GET    | `/api/v1/email/verify/{user}/{hash}`      | Verify an email address via the emailed link                             |
 
 Notes:
 
+- The `users` resource is registered **without** authentication. Add the
+  `Authenticate` middleware before deploying (see
+  [authentication](src/docs/authentication.md#protecting-routes)).
 - User creation requires a `password` (min 8 chars) confirmed via
-  `password_confirmation`, matching the `confirmed` validation rule.
+  `password_confirmation`. A taken email is a `422` (`unique` rule).
 - `forgot()` and the verification-notification endpoint respond with the same
   generic success message whether or not the email exists (or is already
   verified), to avoid leaking account existence.
@@ -141,9 +162,8 @@ Notes:
 
 ## Sessions, cookies & cache
 
-In addition to the stateless `api` token guard, the framework ships
-Laravel-style session-based auth, cookie handling, and a pluggable cache
-layer (`symfony/cache` under the hood).
+The framework ships Laravel-style session-based auth, cookie handling, and a
+pluggable cache layer (`symfony/cache` under the hood).
 
 | Method | URI              | Description                                              |
 | ------ | ---------------- | -------------------------------------------------------- |
@@ -162,11 +182,10 @@ layer (`symfony/cache` under the hood).
   (`VtPhp\Cookie\CookieJar`) and attached to the response as `Set-Cookie`
   headers by the `AddQueuedCookiesToResponse` middleware. Incoming cookies can
   be read with `$request->cookie('name')` or `$psrRequest->getCookieParams()`.
-- **Auth guards** — `config/auth.php` now has a `web` guard (`driver: session`)
-  alongside the existing `api` guard. Use the `auth()` helper:
-  `auth('web')->attempt([...])`, `->user()`, `->check()`, `->logout()`. Protect
-  routes with the `Authenticate` middleware via the `#[Route(middleware: [...])]`
-  attribute parameter (see `AuthController::me()`).
+- **Auth** — `config/auth.php` has a default `web` guard (`driver: session`)
+  backed by an `eloquent` user provider pointed at `App\Models\User`. Use
+  `auth()->attempt([...])`, `->user()`, `->check()`, `->logout()`, or
+  `$request->user()`. Protect routes with the `Authenticate` middleware.
 - **Cache** — the `cache()` helper (`VtPhp\Cache\CacheManager`) exposes
   `get`/`put`/`has`/`forget`/`remember`/`flush`, resolving a PSR-16 store per
   `config/cache.php`. Supported drivers: `array` (in-memory), `file`
@@ -178,15 +197,21 @@ layer (`symfony/cache` under the hood).
 
 ## Database, seeding & Eloquent
 
-`app/Models/User.php` is an Eloquent model (`Illuminate\Database\Eloquent\Model`),
-and `app/Repositories/EloquentUserRepository.php` is the default binding for
-`UserRepositoryInterface`. Migrations still use the Doctrine DBAL-based
-`php forge migrate` runner (`database/migrations/`); seeders are plain classes
-extending `VtPhp\Database\Seeder` (`database/seeders/`):
+Models are Eloquent models (`Illuminate\Database\Eloquent\Model`) used directly
+from controllers, as in Laravel. Migrations use Laravel's schema builder through
+`VtPhp\Database\Schema`; seeders are plain classes extending
+`VtPhp\Database\Seeder` (`database/seeders/`):
+
+```php
+Schema::create('products', function (Blueprint $table): void {
+    $table->id();
+    $table->string('name');
+    $table->timestamps();
+});
+```
 
 ```powershell
-php forge make:migration create_products_table
-php forge make:seeder ProductSeeder
+php forge make:model Product -ms     # model + migration + seeder
 php forge migrate
 php forge db:seed
 ```
@@ -225,13 +250,14 @@ in `.env` for real delivery.
 
 ## What's not included yet
 
-Following the blueprint's own v0.1 → v1.0 roadmap, this build covers Phases 1–9
-(foundation, HTTP, routing, controllers, middleware, exceptions, database,
-validation, API resources) plus the CLI, Eloquent ORM, Blade templating, and
-mail. Authentication/authorization, cache, rate limiting, events, queues,
-filesystem drivers, and OpenAPI generation are the next phases — the config
-files and `.env` keys for most of them are already scaffolded in `config/` to
-make that work additive rather than a rewrite.
+Following the blueprint's v0.1 → v1.0 roadmap, this build covers the
+foundation, HTTP, routing, controllers, middleware, exceptions, database,
+validation and API resources, plus the CLI, Eloquent ORM, Blade templating,
+mail, session authentication and cache. Still to come: token (bearer)
+authentication, authorization (gates/policies), model factories, rate
+limiting, events, queues, filesystem drivers and OpenAPI generation. The
+config files and `.env` keys for several of them are already scaffolded in
+`config/`, so that work can be added rather than rewritten.
 
 ## Testing
 
@@ -239,4 +265,12 @@ make that work additive rather than a rewrite.
 composer test    # phpunit
 composer stan     # phpstan analyse
 composer fmt      # php-cs-fixer fix
+
+php vendor/bin/phpunit --exclude-group defect   # everything that works
+php vendor/bin/phpunit --group defect           # known bugs, captured as failing tests
 ```
+
+`tests/Unit` covers each subsystem in isolation. `tests/Feature` boots the real
+app against a temporary SQLite database and sends requests through the HTTP
+kernel. Tests in the `defect` group document known bugs and fail until those
+bugs are fixed.

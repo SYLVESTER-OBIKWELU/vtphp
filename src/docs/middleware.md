@@ -4,7 +4,7 @@ Middleware are plain PSR-15 classes implementing
 `Psr\Http\Server\MiddlewareInterface`:
 
 ```php
-namespace App\Middleware;
+namespace App\Http\Middleware;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -26,7 +26,7 @@ final class EnsureTokenIsValid implements MiddlewareInterface
 }
 ```
 
-Generate the boilerplate with:
+Generate the boilerplate in `app/Http/Middleware/` with:
 
 ```powershell
 php forge make:middleware EnsureTokenIsValid
@@ -37,12 +37,13 @@ php forge make:middleware EnsureTokenIsValid
 - **Globally**, for every request: add the class to `$middleware` in
   `src/Foundation/Http/Kernel.php`.
 - **Per group**: pass `'middleware' => [...]` to `$router->group([...], ...)`.
-- **Per route**: pass a 5th `array $middleware` argument to
+- **Per resource**: pass `['middleware' => [...]]` as `apiResource()`'s options.
+- **Per route**: pass the 4th `array $middleware` argument to
   `$router->get()/post()/...`, or use the `middleware` parameter on the
   `#[Route]` attribute:
 
   ```php
-  #[Route(method: 'GET', path: '/me', name: 'auth.me', middleware: [Authenticate::class])]
+  $router->get('/me', [AuthController::class, 'me'], 'auth.me', [Authenticate::class]);
   ```
 
 Container dependencies with default values are autowired, so a middleware
