@@ -117,19 +117,18 @@ Monolog can then be the implementation underneath.
 A sensible starting target is:
 
 ```text
-PHP 8.4+
+PHP 8.5+
 ```
 
-PHP 8.5 is the current stable release line (GA November 2025), so a realistic CI matrix today is:
+PHP 8.5 is the current stable release line (GA November 2025) and is also the framework's minimum, so a realistic CI matrix today is:
 
 ```text
-PHP 8.4  (minimum supported)
-PHP 8.5  (current stable)
+PHP 8.5  (minimum supported, current stable)
 ```
 
 with PHP 8.6 added to the matrix as soon as it enters alpha/beta, so regressions are caught before it becomes the new stable release. PHP follows an annual release cycle each November, with roughly 2 years of active support and a further year of security-only support per version — build your own support-window policy (e.g. "we support the two newest stable minor versions") and publish it, rather than leaving it implicit.
 
-Keep your framework's supported PHP range explicit in `composer.json` (`"php": "^8.4"`) and in your documentation's compatibility table, and update both the same day you add support for a new minor version.
+Keep your framework's supported PHP range explicit in `composer.json` (`"php": "^8.5"`) and in your documentation's compatibility table, and update both the same day you add support for a new minor version.
 
 Avoid supporting old PHP versions simply for compatibility if doing so makes the framework architecture harder to maintain.
 
@@ -138,7 +137,7 @@ Avoid supporting old PHP versions simply for compatibility if doing so makes the
 Because this framework must stay independent and easy to move forward, bake these practices in from day one rather than retrofitting them later:
 
 ```text
-- Run `composer.json`'s "php" constraint as an open upper bound (^8.4, not 8.4.*), so patch and
+- Run `composer.json`'s "php" constraint as an open upper bound (^8.5, not 8.5.*), so patch and
   minor releases are picked up automatically by users.
 - Add a "test-with-lowest" and "test-with-highest" CI job (Composer's --prefer-lowest /
   --prefer-stable) so the framework is verified against both edges of its supported range.
@@ -254,7 +253,7 @@ without using Laravel's implementations.
 
 ### Recommended Symfony baseline
 
-For a new framework, a sensible stable baseline is the Symfony **7.4 LTS** component generation rather than coupling your API framework to the full Symfony framework.
+For a new framework, a sensible baseline is the current Symfony **8.x** component generation (8.1 at the time of writing; Symfony 8 requires PHP 8.4+) rather than coupling your API framework to the full Symfony framework. If you need a longer support window than 8.x minors provide, the **7.4 LTS** line is the conservative alternative.
 
 Keep Symfony as a source of standalone components rather than adopting Symfony's entire application structure.
 
@@ -2616,7 +2615,6 @@ php-cs-fixer --dry-run
 Test at minimum:
 
 ```text
-PHP 8.4
 PHP 8.5
 ```
 
@@ -3351,7 +3349,7 @@ A meta-framework package might look conceptually like:
     "type": "library",
     "license": "MIT",
     "require": {
-        "php": "^8.4",
+        "php": "^8.5",
 
         "psr/container": "^2.0",
         "psr/http-message": "^2.0",
@@ -3362,18 +3360,18 @@ A meta-framework package might look conceptually like:
         "psr/simple-cache": "^3.0",
         "psr/clock": "^1.0",
 
-        "symfony/config": "^7.4",
-        "symfony/console": "^7.4",
-        "symfony/dependency-injection": "^7.4",
-        "symfony/dotenv": "^7.4",
-        "symfony/event-dispatcher": "^7.4",
-        "symfony/routing": "^7.4",
-        "symfony/serializer": "^7.4",
-        "symfony/uid": "^7.4",
-        "symfony/validator": "^7.4",
+        "symfony/config": "^8.1",
+        "symfony/console": "^8.1",
+        "symfony/dependency-injection": "^8.1",
+        "symfony/dotenv": "^8.1",
+        "symfony/event-dispatcher": "^8.1",
+        "symfony/routing": "^8.1",
+        "symfony/serializer": "^8.1",
+        "symfony/uid": "^8.1",
+        "symfony/validator": "^8.1",
 
-        "doctrine/dbal": "^4.4",
-        "monolog/monolog": "^3.12"
+        "doctrine/dbal": "^4.5",
+        "monolog/monolog": "^3.12.1"
     },
     "autoload": {
         "psr-4": {
@@ -3753,7 +3751,7 @@ The public interfaces should be documented and covered by tests.
 A strong target architecture is:
 
 ```text
-PHP 8.4+
+PHP 8.5+
         │
         ▼
 Composer

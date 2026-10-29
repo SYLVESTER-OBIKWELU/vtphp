@@ -22,7 +22,7 @@ and the `forge` CLI.
 
 ## Requirements
 
-- PHP ^8.4
+- PHP ^8.5
 - ext-json, ext-mbstring, ext-pdo (+ the PDO driver for your database)
 
 ## Getting started
