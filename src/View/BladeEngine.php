@@ -23,9 +23,6 @@ final class BladeEngine
 
         @mkdir($compiled, 0777, true);
 
-        // BladeOne's docblock claims string|null, but its implementation accepts
-        // an array of template paths (see BladeOne::__construct()).
-        // @phpstan-ignore argument.type
         $this->blade = new BladeOne($paths, $compiled, BladeOne::MODE_AUTO);
     }
 

@@ -42,7 +42,7 @@ final class Kernel
         $console->setAutoExit(false);
 
         foreach ($this->commands as $commandClass) {
-            $console->add($this->app->make($commandClass));
+            $console->addCommand($this->app->make($commandClass));
         }
 
         return $console->run($input, $output);
