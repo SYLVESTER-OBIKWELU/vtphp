@@ -47,13 +47,16 @@ final class User extends Model
     }
 
     /**
-     * Changing an existing user's address clears its verified status, so a
-     * new, unproven address never inherits it.
+     * Emails are stored lowercased and trimmed, so lookups and the unique
+     * index are effectively case-insensitive. Changing an existing user's
+     * address clears its verified status, so a new, unproven address never
+     * inherits it.
      */
     protected function email(): Attribute
     {
         return Attribute::make(
             set: function (string $value): array {
+                $value = mb_strtolower(trim($value));
                 $attributes = ['email' => $value];
 
                 if ($this->exists && $value !== $this->getOriginal('email')) {

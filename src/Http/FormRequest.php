@@ -36,6 +36,13 @@ abstract class FormRequest extends Request
     }
 
     /**
+     * Runs before validation; use $this->merge([...]) to normalize input.
+     */
+    protected function prepareForValidation(): void
+    {
+    }
+
+    /**
      * The input that the rules are applied to.
      *
      * @return array<string, mixed>
@@ -53,6 +60,8 @@ abstract class FormRequest extends Request
         if (!$this->authorize()) {
             throw new AuthorizationException();
         }
+
+        $this->prepareForValidation();
 
         $this->validatedData = Validator::make($this->validationData(), $this->rules())->validated();
     }

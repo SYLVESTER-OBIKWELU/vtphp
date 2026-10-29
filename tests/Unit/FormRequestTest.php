@@ -38,6 +38,19 @@ final class ForbiddenRequest extends FormRequest
     }
 }
 
+final class NormalizingRequest extends FormRequest
+{
+    protected function prepareForValidation(): void
+    {
+        $this->merge(['slug' => strtolower((string) $this->input('slug'))]);
+    }
+
+    public function rules(): array
+    {
+        return ['slug' => 'required|in:hello-world'];
+    }
+}
+
 final class ArticleController
 {
     /**
@@ -113,6 +126,26 @@ final class FormRequestTest extends TestCase
         $this->assertSame('Hello', $request->validated('title'));
         $this->assertSame('draft', $request->validated('status', 'draft'));
         $this->assertSame('Hello', $request->input('title'), 'A FormRequest is still a Request.');
+    }
+
+    public function test_prepare_for_validation_can_normalize_input(): void
+    {
+        $this->bindRequest(['slug' => 'Hello-World']);
+
+        $request = $this->app->make(NormalizingRequest::class);
+
+        $this->assertSame(['slug' => 'hello-world'], $request->validated());
+        $this->assertSame('hello-world', $request->input('slug'), 'merge() overrides the original input.');
+    }
+
+    public function test_merge_adds_and_overrides_input(): void
+    {
+        $request = Request::fromPsr((new Psr17Factory())->createServerRequest('GET', '/')->withQueryParams(['a' => '1', 'b' => '2']));
+
+        $request->merge(['b' => 'two', 'c' => 3]);
+
+        $this->assertSame(['a' => '1', 'b' => 'two', 'c' => 3], $request->all());
+        $this->assertTrue($request->has('c'));
     }
 
     public function test_request_validate_returns_only_validated_fields(): void

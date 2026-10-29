@@ -9,6 +9,9 @@ use VtPhp\Validation\Validator;
 
 class Request
 {
+    /** @var array<string, mixed> Input added or overridden via merge(). */
+    private array $merged = [];
+
     final public function __construct(private ServerRequestInterface $psr)
     {
     }
@@ -68,7 +71,19 @@ class Request
      */
     public function all(): array
     {
-        return array_merge($this->psr->getQueryParams(), $this->parsedBody());
+        return array_merge($this->psr->getQueryParams(), $this->parsedBody(), $this->merged);
+    }
+
+    /**
+     * Add or override input values, e.g. to normalize them before validation.
+     *
+     * @param array<string, mixed> $input
+     */
+    public function merge(array $input): static
+    {
+        $this->merged = array_merge($this->merged, $input);
+
+        return $this;
     }
 
     /**

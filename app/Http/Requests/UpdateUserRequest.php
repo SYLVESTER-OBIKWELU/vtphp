@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\NormalizesEmail;
 use VtPhp\Http\FormRequest;
 
 final class UpdateUserRequest extends FormRequest
 {
+    use NormalizesEmail;
+
     /**
      * Users may only edit their own account.
      */

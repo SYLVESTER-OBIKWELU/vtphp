@@ -58,6 +58,20 @@ public function rules(): array
 }
 ```
 
+### Normalizing input before validation
+
+Override `prepareForValidation()` and call `$this->merge([...])` to clean up
+input before the rules run. The sample app's `NormalizesEmail` trait
+(`app/Http/Requests/Concerns/`) lowercases `email` this way, so
+`unique:users,email` and logins are case-insensitive:
+
+```php
+protected function prepareForValidation(): void
+{
+    $this->merge(['slug' => Str::slug((string) $this->input('slug'))]);
+}
+```
+
 ## Inline validation
 
 For small endpoints, validate directly on the request:

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace VtPhp\Tests\Feature;
 
 use App\Models\User;
-use PHPUnit\Framework\Attributes\Group;
 use VtPhp\Tests\Support\FeatureTestCase;
 
 final class UserApiTest extends FeatureTestCase
@@ -173,15 +172,28 @@ final class UserApiTest extends FeatureTestCase
         $this->assertErrorCode($this->request('PATCH', '/api/v1/users/abc', ['name' => 'x']), 404, 'NOT_FOUND');
     }
 
-    #[Group('defect')]
     public function test_emails_are_unique_regardless_of_case(): void
     {
         $this->createUser('ada@example.com');
 
         $response = $this->request('POST', '/api/v1/users', [
-            'name' => 'Ada', 'email' => 'ADA@example.com', 'password' => 'password123', 'password_confirmation' => 'password123',
+            'name' => 'Ada', 'email' => 'ADA@Example.com', 'password' => 'password123', 'password_confirmation' => 'password123',
         ]);
 
-        $this->assertSame(422, $response->getStatusCode());
+        $this->assertErrorCode($response, 422, 'VALIDATION_ERROR');
+        $this->assertSame(['The email has already been taken.'], $this->body($response)['error']['errors']['email']);
+    }
+
+    public function test_emails_are_stored_lowercased_and_match_any_case(): void
+    {
+        $user = $this->createUser('  Grace.Hopper@Example.COM ');
+        $this->assertSame('grace.hopper@example.com', $user['email']);
+
+        $this->assertSame(200, $this->login('GRACE.HOPPER@example.com', 'password123')->getStatusCode());
+
+        $this->request('POST', '/api/v1/password/forgot', ['email' => 'Grace.Hopper@EXAMPLE.com']);
+        $this->assertSame(['grace.hopper@example.com'], $this->logs->mails()[0]['to'] ?? null);
+
+        $this->assertSame('ada@example.com', User::query()->create(['name' => 'Ada', 'email' => 'ADA@Example.com', 'password' => null])->email, 'Direct model writes are normalized too.');
     }
 }
