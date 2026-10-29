@@ -6,14 +6,28 @@
 into the container by the `StartSession` middleware), backed by a
 `SessionStoreInterface` driver configured in `config/session.php`:
 
-- `file` (default) — `storage/framework/sessions/`, serialized with
-  `allowed_classes: false` so a tampered/corrupted session file can never be
-  deserialized into arbitrary PHP objects.
-- `array` — non-persistent, in-memory; only useful for tests/CLI, since data
-  doesn't survive past the current process.
+- `database` (default): a `sessions` table, created by `php forge migrate`.
+  Each row stores the session id, the logged-in `user_id` (so a user's
+  sessions can be found or revoked with one query), the payload and
+  `last_activity`. This lets several app servers share sessions.
+  `SESSION_CONNECTION` and `SESSION_TABLE` pick the connection and table.
+- `file`: `storage/framework/sessions/`, one file per session.
+- `array`: in-memory and not persisted; only useful for tests and CLI.
+
+Payloads are unserialized with `allowed_classes: false`, so a tampered file
+or row can never be turned into arbitrary PHP objects.
 
 Env vars: `SESSION_DRIVER`, `SESSION_LIFETIME` (minutes), `SESSION_COOKIE`,
-`SESSION_SECURE_COOKIE`, `SESSION_SAME_SITE`.
+`SESSION_SECURE_COOKIE`, `SESSION_SAME_SITE`, `SESSION_CONNECTION`,
+`SESSION_TABLE`.
+
+### Expired sessions
+
+Expired sessions are never used. They're also swept away automatically: on
+2 in 100 requests (`'lottery' => [2, 100]` in `config/session.php`), the
+current store deletes sessions idle for longer than `SESSION_LIFETIME`. To
+sweep on a schedule instead, set the lottery to `[0, 100]` and run
+`php forge session:gc` from cron.
 
 Access the current session with the `session()` helper (or type-hint
 `VtPhp\Session\Session` in anything the container resolves):
@@ -73,11 +87,15 @@ reach the store, so distinct keys never collide.
 
 Supported drivers (`CACHE_DRIVER` / `config/cache.php`'s `stores`):
 
-| Driver  | Notes                                                          |
-| ------- | -------------------------------------------------------------- |
-| `array` | In-memory, per-request only. Good default for local dev/tests. |
-| `file`  | Persists to `storage/framework/cache/data`.                    |
-| `redis` | See below — requires an extra package.                         |
+| Driver     | Notes                                                                                     |
+| ---------- | ----------------------------------------------------------------------------------------- |
+| `database` | Default. A `cache` table created by `php forge migrate`; shared by every app server. `CACHE_CONNECTION` and `CACHE_TABLE` pick the connection and table. |
+| `file`     | Persists to `storage/framework/cache/data`.                                               |
+| `array`    | In-memory, per-request only. Useful for tests.                                            |
+| `redis`    | See below; requires an extra package.                                                     |
+
+Flush a store with `php forge cache:clear` (the default store) or
+`php forge cache:clear file` (a named one).
 
 ### Redis is opt-in
 

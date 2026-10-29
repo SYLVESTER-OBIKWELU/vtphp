@@ -44,6 +44,16 @@ php forge db:seed            # run database seeders
 
 See [Migrations & seeders](migrations.md).
 
+## Cache & sessions
+
+```powershell
+php forge cache:clear        # flush the default cache store
+php forge cache:clear file   # flush a named store
+php forge session:gc         # delete expired sessions now
+```
+
+See [Sessions, cookies & cache](sessions-cookies-cache.md).
+
 ## Adding your own command
 
 Extend `VtPhp\Console\Command`, annotate the class with
