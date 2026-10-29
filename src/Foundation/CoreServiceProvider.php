@@ -18,6 +18,7 @@ use VtPhp\Http\FormRequest;
 use VtPhp\Http\ResponseFactory;
 use VtPhp\Logging\LogManager;
 use VtPhp\Mail\Mailer;
+use VtPhp\OpenApi\SwaggerController;
 use VtPhp\Pagination\PaginationState;
 use VtPhp\Queue\QueueManager;
 use VtPhp\Queue\Worker;
@@ -135,5 +136,20 @@ final class CoreServiceProvider extends ServiceProvider
         $this->app->alias('mailer', Mailer::class);
         $this->app->alias('cache', CacheManager::class);
         $this->app->alias('queue', QueueManager::class);
+    }
+
+    public function boot(): void
+    {
+        $config = $this->app->make(Repository::class);
+
+        // SWAGGER_ENABLED=true: interactive API docs at /api-docs.
+        if ($config->get('swagger.enabled', false)) {
+            $path = '/'.trim((string) $config->get('swagger.path', '/api-docs'), '/');
+            $middleware = array_values(array_filter((array) $config->get('swagger.middleware', []), 'is_string'));
+            $router = $this->app->make(Router::class);
+
+            $router->get($path, [SwaggerController::class, 'ui'], 'swagger.ui', $middleware);
+            $router->get(SwaggerController::jsonPath($path), [SwaggerController::class, 'json'], 'swagger.json', $middleware);
+        }
     }
 }

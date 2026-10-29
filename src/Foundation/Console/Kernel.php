@@ -17,6 +17,7 @@ final class Kernel
         \VtPhp\Console\Commands\ServeCommand::class,
         \VtPhp\Console\Commands\KeyGenerateCommand::class,
         \VtPhp\Console\Commands\RouteListCommand::class,
+        \VtPhp\Console\Commands\SwaggerGenerateCommand::class,
         \VtPhp\Console\Commands\MigrateCommand::class,
         \VtPhp\Console\Commands\MigrateRollbackCommand::class,
         \VtPhp\Console\Commands\MigrateStatusCommand::class,

@@ -17,7 +17,7 @@ use VtPhp\Tests\Support\TempDirectory;
 final class CliTest extends FeatureTestCase
 {
     private const COMMANDS = [
-        'about', 'serve', 'key:generate', 'route:list', 'migrate', 'migrate:rollback', 'migrate:status',
+        'about', 'serve', 'key:generate', 'route:list', 'swagger:generate', 'migrate', 'migrate:rollback', 'migrate:status',
         'make:controller', 'make:model', 'make:resource', 'make:migration', 'make:middleware',
         'make:seeder', 'make:mail', 'make:request', 'stub:publish', 'db:seed',
         'cache:clear', 'session:gc', 'tokens:prune', 'make:policy', 'make:job',

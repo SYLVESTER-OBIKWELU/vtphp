@@ -20,7 +20,7 @@ final class Router
 {
     private RouteCollection $routes;
 
-    /** @var array<int, array{prefix: string, middleware: array<int, string>, as: string}> */
+    /** @var array<int, array{prefix: string, middleware: array<int, string>, as: string, tag: ?string}> */
     private array $groupStack = [];
 
     private int $routeCount = 0;
@@ -92,6 +92,8 @@ final class Router
             defaults: [
                 '_action' => $action,
                 '_middleware' => [...($group['middleware'] ?? []), ...$middleware],
+                // The API docs section (Swagger tag) this route is listed under.
+                '_tag' => $group['tag'] ?? null,
             ],
             methods: $methods,
         );
@@ -100,7 +102,11 @@ final class Router
     }
 
     /**
-     * @param array{prefix?: string, middleware?: array<int, string>, as?: string} $attributes
+     * Routes registered inside $callback share these attributes. `tag` names
+     * the section they're listed under in the API docs (/api-docs); an inner
+     * group's tag replaces its parent's.
+     *
+     * @param array{prefix?: string, middleware?: array<int, string>, as?: string, tag?: string} $attributes
      */
     public function group(array $attributes, \Closure $callback): void
     {
@@ -110,6 +116,7 @@ final class Router
             'prefix' => rtrim(($parent['prefix'] ?? '').'/'.ltrim($attributes['prefix'] ?? '', '/'), '/'),
             'middleware' => [...($parent['middleware'] ?? []), ...($attributes['middleware'] ?? [])],
             'as' => ($parent['as'] ?? '').($attributes['as'] ?? ''),
+            'tag' => $attributes['tag'] ?? $parent['tag'] ?? null,
         ];
 
         $callback($this);
@@ -118,7 +125,7 @@ final class Router
     }
 
     /**
-     * @return array{prefix?: string, middleware?: array<int, string>, as?: string}
+     * @return array{prefix?: string, middleware?: array<int, string>, as?: string, tag?: ?string}
      */
     private function currentGroup(): array
     {
@@ -137,10 +144,18 @@ final class Router
      *     DELETE    /users/{user}    users.destroy  destroy()
      *
      * @param class-string $controller
-     * @param array{only?: array<int, string>, except?: array<int, string>, middleware?: array<int, class-string>, parameter?: string} $options
+     * @param array{only?: array<int, string>, except?: array<int, string>, middleware?: array<int, class-string>, parameter?: string, tag?: string} $options
      */
     public function apiResource(string $name, string $controller, array $options = []): void
     {
+        if (isset($options['tag'])) {
+            $tag = $options['tag'];
+            unset($options['tag']);
+            $this->group(['tag' => $tag], fn () => $this->apiResource($name, $controller, $options));
+
+            return;
+        }
+
         $base = '/'.trim($name, '/');
         $parameter = $options['parameter'] ?? Str::singular(str_replace('-', '_', basename($base)));
         $routeName = str_replace('/', '.', trim($name, '/'));
