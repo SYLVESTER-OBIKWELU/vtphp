@@ -135,6 +135,29 @@ final class CliTest extends FeatureTestCase
         $this->assertStringContainsString('Migrated: 2026_09_22_000001_create_users_table', $migrated);
     }
 
+    public function test_destructive_commands_need_force_in_production(): void
+    {
+        $this->setEnvironment(['APP_ENV' => 'production']);
+        $app = $this->freshApp();
+
+        foreach (['migrate', 'migrate:rollback', 'db:seed', 'key:generate'] as $command) {
+            [$code, $output] = $this->forge(['command' => $command], $app);
+
+            $this->assertSame(1, $code, $command);
+            $this->assertStringContainsString('Re-run with --force', $output, $command);
+        }
+
+        $this->assertMatchesRegularExpression('/create_users_table\s+Ran/', $this->forge(['command' => 'migrate:status'], $app)[1], 'Nothing was rolled back.');
+
+        [$code, $output] = $this->forge(['command' => 'migrate', '--force' => true], $app);
+        $this->assertSame(0, $code);
+        $this->assertStringContainsString('Nothing to migrate.', $output);
+
+        [$code] = $this->forge(['command' => 'db:seed', '--force' => true], $app);
+        $this->assertSame(0, $code);
+        $this->assertSame(0, User::query()->count(), 'Sample users with a known password are never seeded in production.');
+    }
+
     public function test_db_seed_is_idempotent(): void
     {
         [$code, $output] = $this->forge(['command' => 'db:seed']);

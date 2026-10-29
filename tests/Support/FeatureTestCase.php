@@ -38,11 +38,17 @@ abstract class FeatureTestCase extends TestCase
     /** @var array<string, string> Cookies carried between requests, like a browser jar. */
     protected array $cookies = [];
 
-    /** @var array<string, string|false> */
-    private array $originalEnv = [];
+    /**
+     * The whole environment before the test, restored afterwards, so neither
+     * setEnvironment() nor a .env file loaded mid-test leaks into later tests.
+     *
+     * @var array{getenv: array<string, string>, env: array<string, mixed>, server: array<string, mixed>}
+     */
+    private array $environmentSnapshot;
 
     protected function setUp(): void
     {
+        $this->environmentSnapshot = ['getenv' => getenv(), 'env' => $_ENV, 'server' => $_SERVER];
         $this->tmp = TempDirectory::create('vtphp-feature');
         $this->logs = new TestLogger();
 
@@ -77,15 +83,20 @@ abstract class FeatureTestCase extends TestCase
         unset($this->app);
         gc_collect_cycles();
 
-        foreach ($this->originalEnv as $key => $value) {
-            if ($value === false) {
+        $before = $this->environmentSnapshot['getenv'];
+
+        foreach (array_keys(getenv()) as $key) {
+            if (!array_key_exists($key, $before)) {
                 putenv($key);
-                unset($_ENV[$key], $_SERVER[$key]);
-            } else {
-                putenv("{$key}={$value}");
-                $_ENV[$key] = $_SERVER[$key] = $value;
             }
         }
+
+        foreach ($before as $key => $value) {
+            putenv("{$key}={$value}");
+        }
+
+        $_ENV = $this->environmentSnapshot['env'];
+        $_SERVER = $this->environmentSnapshot['server'];
 
         TempDirectory::delete($this->tmp);
     }
@@ -96,10 +107,6 @@ abstract class FeatureTestCase extends TestCase
     protected function setEnvironment(array $values): void
     {
         foreach ($values as $key => $value) {
-            if (!array_key_exists($key, $this->originalEnv)) {
-                $this->originalEnv[$key] = getenv($key);
-            }
-
             putenv("{$key}={$value}");
             $_ENV[$key] = $_SERVER[$key] = $value;
         }

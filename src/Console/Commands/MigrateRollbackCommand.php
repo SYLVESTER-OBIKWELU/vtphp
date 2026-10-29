@@ -12,6 +12,8 @@ use VtPhp\Database\Migrations\Migrator;
 #[AsCommand(name: 'migrate:rollback', description: 'Rollback the last database migration batch')]
 final class MigrateRollbackCommand extends Command
 {
+    protected bool $destructive = true;
+
     protected function handle(): int
     {
         $rolledBack = $this->migrator()->rollback();

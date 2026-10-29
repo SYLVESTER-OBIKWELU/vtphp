@@ -7,6 +7,7 @@ namespace VtPhp\Console;
 use Symfony\Component\Console\Command\Command as SymfonyCommand;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use VtPhp\Foundation\Application;
@@ -19,9 +20,23 @@ abstract class Command extends SymfonyCommand
 
     protected SymfonyStyle $io;
 
+    /**
+     * Commands that change or destroy data in place (migrations, seeding,
+     * key rotation). They get a --force option and refuse to run when
+     * APP_ENV=production unless it's given, like Laravel's.
+     */
+    protected bool $destructive = false;
+
     public function __construct(protected Application $app)
     {
         parent::__construct();
+    }
+
+    protected function configure(): void
+    {
+        if ($this->destructive) {
+            $this->addOption('force', null, InputOption::VALUE_NONE, 'Run even when APP_ENV=production');
+        }
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -29,6 +44,12 @@ abstract class Command extends SymfonyCommand
         $this->input = $input;
         $this->output = $output;
         $this->io = new SymfonyStyle($input, $output);
+
+        if ($this->destructive && $this->app->environment() === 'production' && !$input->getOption('force')) {
+            $this->error('The application is in production (APP_ENV=production). Re-run with --force if you really mean it.');
+
+            return self::FAILURE;
+        }
 
         return $this->handle();
     }

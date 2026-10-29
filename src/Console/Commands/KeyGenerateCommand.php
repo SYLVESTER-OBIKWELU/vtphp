@@ -10,6 +10,9 @@ use VtPhp\Console\Command;
 #[AsCommand(name: 'key:generate', description: 'Generate a new application key')]
 final class KeyGenerateCommand extends Command
 {
+    // Rotating APP_KEY invalidates every signed link already sent.
+    protected bool $destructive = true;
+
     protected function handle(): int
     {
         $key = 'base64:'.base64_encode(random_bytes(32));

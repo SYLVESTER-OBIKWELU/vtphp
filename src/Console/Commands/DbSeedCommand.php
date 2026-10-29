@@ -11,6 +11,8 @@ use VtPhp\Console\Command;
 #[AsCommand(name: 'db:seed', description: 'Seed the database with sample records')]
 final class DbSeedCommand extends Command
 {
+    protected bool $destructive = true;
+
     protected function handle(): int
     {
         (new DatabaseSeeder())->run();

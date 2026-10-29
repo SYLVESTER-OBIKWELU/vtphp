@@ -11,6 +11,12 @@ final class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        // Sample accounts with a known password: never in production, even
+        // with `db:seed --force`.
+        if (app()->environment() === 'production') {
+            return;
+        }
+
         User::query()->firstOrCreate(
             ['email' => 'ada@example.com'],
             ['name' => 'Ada Lovelace', 'password' => 'password'],

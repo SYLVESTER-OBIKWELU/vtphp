@@ -12,6 +12,8 @@ use VtPhp\Database\Migrations\Migrator;
 #[AsCommand(name: 'migrate', description: 'Run the database migrations')]
 final class MigrateCommand extends Command
 {
+    protected bool $destructive = true;
+
     protected function handle(): int
     {
         $ran = $this->migrator()->run();
