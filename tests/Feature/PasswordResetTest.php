@@ -129,15 +129,20 @@ final class PasswordResetTest extends FeatureTestCase
         $this->assertNotSame(405, $this->request('GET', (string) parse_url($url, PHP_URL_PATH).'?'.parse_url($url, PHP_URL_QUERY))->getStatusCode());
     }
 
-    #[Group('defect')]
     public function test_resetting_the_password_ends_existing_sessions(): void
     {
         $this->login('ada@example.com', 'old-password');
         $stolenSession = $this->cookies;
+        $this->assertSame(200, $this->request('GET', '/api/v1/me')->getStatusCode());
 
+        $this->cookies = [];
         $this->reset($this->requestReset());
 
         $this->cookies = $stolenSession;
         $this->assertSame(401, $this->request('GET', '/api/v1/me')->getStatusCode(), 'An attacker’s session survived the reset.');
+
+        $this->cookies = [];
+        $this->login('ada@example.com', 'new-password');
+        $this->assertSame(200, $this->request('GET', '/api/v1/me')->getStatusCode(), 'New logins work normally.');
     }
 }

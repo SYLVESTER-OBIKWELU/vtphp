@@ -118,6 +118,29 @@ final class AuthTest extends TestCase
         $this->assertSame('ada@example.com', $nextRequest->user()?->email);
     }
 
+    public function test_a_password_change_ends_existing_sessions(): void
+    {
+        $this->guard()->attempt(['email' => 'ada@example.com', 'password' => 'secret']);
+        $this->assertNotSame('', (string) $this->session->get('auth_password_hash'));
+        $this->assertStringNotContainsString((string) $this->provider->users[1]->password, serialize($this->session->all()), 'The raw hash is never stored.');
+
+        $this->provider->users[1]->password = password_hash('changed', PASSWORD_BCRYPT);
+
+        $this->assertTrue($this->guard()->guest());
+        $this->assertSame([], $this->session->all(), 'The stale session is invalidated.');
+    }
+
+    public function test_a_session_without_a_fingerprint_adopts_the_current_one(): void
+    {
+        $this->session->put('auth_user_id', 1); // e.g. created before fingerprinting existed
+
+        $this->assertTrue($this->guard()->check());
+        $this->assertIsString($this->session->get('auth_password_hash'));
+
+        $this->provider->users[1]->password = password_hash('changed', PASSWORD_BCRYPT);
+        $this->assertTrue($this->guard()->guest(), 'Once adopted, the fingerprint is enforced.');
+    }
+
     public function test_a_deleted_user_is_treated_as_a_guest(): void
     {
         $this->session->put('auth_user_id', 99);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace VtPhp\Tests\Feature;
 
+use App\Models\User;
 use VtPhp\Tests\Support\FeatureTestCase;
 
 final class AuthFlowTest extends FeatureTestCase
@@ -92,15 +93,20 @@ final class AuthFlowTest extends FeatureTestCase
         $this->assertErrorCode($this->request('GET', '/api/v1/me'), 401, 'UNAUTHENTICATED');
     }
 
-    public function test_session_files_store_only_the_user_id(): void
+    public function test_session_files_hold_no_secrets(): void
     {
         $this->login();
 
         $file = $this->tmp.'/sessions/'.$this->cookies['vtphp_session'].'.sess';
         $this->assertFileExists($file);
 
-        $data = unserialize((string) file_get_contents($file), ['allowed_classes' => false]);
-        $this->assertSame(['auth_user_id'], array_keys($data));
-        $this->assertStringNotContainsString('password', (string) file_get_contents($file));
+        $contents = (string) file_get_contents($file);
+        $data = unserialize($contents, ['allowed_classes' => false]);
+        $this->assertSame(['auth_user_id', 'auth_password_hash'], array_keys($data));
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $data['auth_password_hash'], 'Only a digest of the hash.');
+
+        $passwordHash = (string) User::query()->where('email', 'ada@example.com')->value('password');
+        $this->assertStringNotContainsString($passwordHash, $contents);
+        $this->assertStringNotContainsString('password123', $contents);
     }
 }

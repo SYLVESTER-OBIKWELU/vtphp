@@ -36,6 +36,12 @@ session (see [Sessions, cookies & cache](sessions-cookies-cache.md)) and
 looks the user up again on each request. Logging in and logging out both
 rotate the session id, which prevents session fixation.
 
+The session also stores a SHA-256 digest of the user's password hash (never
+the hash itself). If the password changes, for example through a reset,
+every other session's digest stops matching and those sessions are logged
+out on their next request. Sessions created before this check existed adopt
+the current digest instead of being logged out.
+
 The sample `app/Http/Controllers/AuthController.php` exposes:
 
 | Method | URI              | Description                                                         |

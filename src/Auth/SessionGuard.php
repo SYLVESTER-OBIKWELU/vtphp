@@ -11,10 +11,15 @@ use VtPhp\Session\Session;
  * Session-backed authentication guard: stores the authenticated user's id
  * in the current request's Session and re-resolves the user via the
  * bound UserProviderInterface.
+ *
+ * The session also keeps a fingerprint of the user's password hash, so
+ * changing or resetting the password ends every other session (like
+ * Laravel's AuthenticateSession): their fingerprint no longer matches.
  */
 final class SessionGuard implements GuardInterface
 {
     private const SESSION_KEY = 'auth_user_id';
+    private const PASSWORD_KEY = 'auth_password_hash';
 
     private ?object $user = null;
     private bool $resolved = false;
@@ -33,8 +38,25 @@ final class SessionGuard implements GuardInterface
 
         $this->resolved = true;
         $id = $this->session()->get(self::SESSION_KEY);
+        $user = $id !== null ? $this->provider->retrieveById($id) : null;
 
-        return $this->user = ($id !== null) ? $this->provider->retrieveById($id) : null;
+        if ($user === null) {
+            return $this->user = null;
+        }
+
+        $stored = $this->session()->get(self::PASSWORD_KEY);
+        $current = $this->passwordFingerprint($user);
+
+        if ($stored === null) {
+            // Sessions from before fingerprinting: adopt rather than log out.
+            $this->session()->put(self::PASSWORD_KEY, $current);
+        } elseif (!is_string($stored) || !hash_equals($stored, $current)) {
+            $this->session()->invalidate();
+
+            return $this->user = null;
+        }
+
+        return $this->user = $user;
     }
 
     public function id(): int|string|null
@@ -77,6 +99,7 @@ final class SessionGuard implements GuardInterface
     public function login(object $user): void
     {
         $this->session()->put(self::SESSION_KEY, $user->id);
+        $this->session()->put(self::PASSWORD_KEY, $this->passwordFingerprint($user));
         $this->session()->regenerate();
         $this->user = $user;
         $this->resolved = true;
@@ -87,6 +110,17 @@ final class SessionGuard implements GuardInterface
         $this->session()->invalidate();
         $this->user = null;
         $this->resolved = true;
+    }
+
+    /**
+     * A digest of the stored password hash (never the hash itself), or a
+     * fixed value for users without a password.
+     */
+    private function passwordFingerprint(object $user): string
+    {
+        $hash = $user->password ?? null;
+
+        return hash('sha256', is_string($hash) ? $hash : '');
     }
 
     private function session(): Session
