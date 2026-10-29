@@ -7,6 +7,8 @@ namespace App\Http\Controllers;
 final class HealthController
 {
     /**
+     * Check that the API is running.
+     *
      * @return array{status: string, version: string}
      */
     public function index(): array

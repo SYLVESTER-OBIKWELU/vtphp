@@ -16,6 +16,11 @@ use VtPhp\Routing\UrlSigner;
 
 final class EmailVerificationController
 {
+    /**
+     * Send an email-verification link.
+     *
+     * The reply is the same whether or not the address is registered.
+     */
     public function send(SendEmailVerificationRequest $request, Mailer $mailer): JsonResponse
     {
         $user = User::query()->where('email', $request->validated('email'))->first();
@@ -29,6 +34,11 @@ final class EmailVerificationController
         return response()->json(['message' => 'If that email address is registered and unverified, a verification link has been sent.']);
     }
 
+    /**
+     * Verify an email address.
+     *
+     * The link from the verification email. It's signed and expires after 60 minutes.
+     */
     public function verify(User $user, string $hash, Request $request, UrlSigner $signer): UserResource
     {
         if (!$signer->hasValidSignature($request->psr()) || !hash_equals($user->verificationHash(), $hash)) {

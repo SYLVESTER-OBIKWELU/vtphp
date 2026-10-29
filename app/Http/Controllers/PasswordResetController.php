@@ -15,6 +15,11 @@ use VtPhp\Mail\Mailer;
 
 final class PasswordResetController
 {
+    /**
+     * Send a password-reset link.
+     *
+     * The reply is the same whether or not the address is registered.
+     */
     public function forgot(ForgotPasswordRequest $request, Mailer $mailer): JsonResponse
     {
         $user = User::query()->where('email', $request->validated('email'))->first();
@@ -30,6 +35,9 @@ final class PasswordResetController
         return response()->json(['message' => 'If that email address is registered, a password reset link has been sent.']);
     }
 
+    /**
+     * Set a new password with the token from the reset email.
+     */
     public function reset(ResetPasswordRequest $request): JsonResponse
     {
         /** @var array{email: string, token: string, password: string} $data */

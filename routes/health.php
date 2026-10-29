@@ -7,4 +7,6 @@ use VtPhp\Routing\Router;
 
 /** @var Router $router */
 
-$router->get('/health', [HealthController::class, 'index'], 'health');
+$router->group(['tag' => 'Health'], function (Router $router): void {
+    $router->get('/health', [HealthController::class, 'index'], 'health');
+});
