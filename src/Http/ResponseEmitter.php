@@ -11,6 +11,9 @@ final class ResponseEmitter
     public function emit(ResponseInterface $response): void
     {
         if (!headers_sent()) {
+            // Don't advertise the PHP version (added by expose_php=On).
+            header_remove('X-Powered-By');
+
             header(sprintf(
                 'HTTP/%s %s %s',
                 $response->getProtocolVersion(),

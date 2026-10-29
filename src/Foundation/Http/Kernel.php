@@ -9,6 +9,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use VtPhp\Exceptions\ExceptionHandler;
 use VtPhp\Foundation\Application;
 use VtPhp\Middleware\AddQueuedCookiesToResponse;
+use VtPhp\Middleware\AddSecurityHeaders;
 use VtPhp\Middleware\HandleCors;
 use VtPhp\Middleware\HandleExceptions;
 use VtPhp\Middleware\Pipeline;
@@ -29,6 +30,7 @@ final class Kernel
      */
     protected array $middleware = [
         TrustProxies::class,
+        AddSecurityHeaders::class,
         RequestIdMiddleware::class,
         HandleCors::class,
         AddQueuedCookiesToResponse::class,

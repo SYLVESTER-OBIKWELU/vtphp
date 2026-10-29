@@ -56,6 +56,32 @@ final class HttpKernelTest extends FeatureTestCase
         $this->assertStringNotContainsString('; Secure', $spoofed->getHeaderLine('Set-Cookie'), 'Untrusted peers cannot claim HTTPS.');
     }
 
+    public function test_security_headers_are_on_every_response_including_errors(): void
+    {
+        foreach (['/health', '/nope'] as $path) {
+            $response = $this->request('GET', $path);
+
+            $this->assertSame('nosniff', $response->getHeaderLine('X-Content-Type-Options'), $path);
+            $this->assertSame('DENY', $response->getHeaderLine('X-Frame-Options'), $path);
+            $this->assertSame('no-referrer', $response->getHeaderLine('Referrer-Policy'), $path);
+            $this->assertSame("default-src 'none'; frame-ancestors 'none'", $response->getHeaderLine('Content-Security-Policy'), $path);
+            $this->assertSame('no-store', $response->getHeaderLine('Cache-Control'), $path);
+            $this->assertFalse($response->hasHeader('Strict-Transport-Security'), 'No HSTS over plain http.');
+        }
+    }
+
+    public function test_hsts_is_sent_on_https_and_headers_can_be_overridden(): void
+    {
+        $this->setEnvironment(['TRUSTED_PROXIES' => '10.0.0.0/8', 'HSTS_INCLUDE_SUBDOMAINS' => 'true']);
+
+        $https = $this->request('GET', '/cached', null, ['X-Forwarded-Proto' => 'https'], function (Application $app): void {
+            $app->make(Router::class)->get('/cached', fn () => (new \VtPhp\Http\JsonResponse(['ok' => true]))->header('Cache-Control', 'public, max-age=60'));
+        }, ['REMOTE_ADDR' => '10.0.0.2']);
+
+        $this->assertSame('max-age=31536000; includeSubDomains', $https->getHeaderLine('Strict-Transport-Security'));
+        $this->assertSame('public, max-age=60', $https->getHeaderLine('Cache-Control'), 'A controller-set header wins.');
+    }
+
     public function test_the_session_id_is_stable_across_requests(): void
     {
         $this->request('GET', '/health');
