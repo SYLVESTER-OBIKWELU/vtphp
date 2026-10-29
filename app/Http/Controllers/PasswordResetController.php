@@ -20,9 +20,10 @@ final class PasswordResetController
         $user = User::query()->where('email', $request->validated('email'))->first();
 
         // Respond identically whether or not the email is registered, so the
-        // endpoint can't be used to discover accounts.
+        // endpoint can't be used to discover accounts. trySend() keeps that
+        // true when mail delivery fails (the failure is logged instead).
         if ($user !== null) {
-            $mailer->send(new ResetPasswordEmail($user, PasswordResetToken::issueFor($user)));
+            $mailer->trySend(new ResetPasswordEmail($user, PasswordResetToken::issueFor($user)));
         }
 
         return response()->json(['message' => 'If that email address is registered, a password reset link has been sent.']);

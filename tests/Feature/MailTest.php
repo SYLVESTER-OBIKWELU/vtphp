@@ -66,6 +66,36 @@ final class MailTest extends FeatureTestCase
         $this->app->make(Mailer::class)->send(new WelcomeEmail($this->user()));
     }
 
+    public function test_try_send_logs_failures_instead_of_throwing(): void
+    {
+        $config = $this->app->make('config');
+        $config->set('mail.default', 'smtp');
+        $config->set('mail.mailers.smtp.port', 1);
+
+        $this->assertFalse($this->app->make(Mailer::class)->trySend(new WelcomeEmail($this->user())));
+
+        $errors = $this->logs->atLevel('error');
+        $this->assertCount(1, $errors);
+        $this->assertStringStartsWith('Mail could not be sent:', $errors[0]['message']);
+        $this->assertSame(WelcomeEmail::class, $errors[0]['context']['mailable']);
+    }
+
+    public function test_a_mail_outage_does_not_reveal_registered_emails(): void
+    {
+        $this->setEnvironment(['MAIL_MAILER' => 'smtp', 'MAIL_PORT' => '1']);
+        $this->user(); // ada@example.com
+
+        foreach (['/api/v1/password/forgot', '/api/v1/email/verification-notification'] as $endpoint) {
+            $registered = $this->request('POST', $endpoint, ['email' => 'ada@example.com']);
+            $unregistered = $this->request('POST', $endpoint, ['email' => 'nobody@example.com']);
+
+            $this->assertSame(200, $registered->getStatusCode(), $endpoint);
+            $this->assertSame($this->body($unregistered), $this->body($registered), "{$endpoint}: identical replies");
+        }
+
+        $this->assertCount(2, $this->logs->atLevel('error'), 'Both failures were logged for operators.');
+    }
+
     public function test_the_view_helper_renders_templates(): void
     {
         $html = view('emails.welcome', ['user' => (object) ['name' => 'Grace', 'email' => 'grace@example.com']]);

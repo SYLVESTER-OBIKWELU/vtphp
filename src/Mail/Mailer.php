@@ -49,6 +49,28 @@ final class Mailer
         (new SymfonyMailer($transport))->send($email);
     }
 
+    /**
+     * Send, but log and swallow delivery failures instead of throwing, for
+     * mail the request shouldn't fail over (e.g. a password reset link: an
+     * error there would also reveal that the address is registered).
+     */
+    public function trySend(Mailable $mailable): bool
+    {
+        try {
+            $this->send($mailable);
+
+            return true;
+        } catch (\Throwable $e) {
+            $this->logger->error('Mail could not be sent: '.$e->getMessage(), [
+                'exception' => $e::class,
+                'mailable' => $mailable::class,
+                'subject' => $mailable->getSubject(),
+            ]);
+
+            return false;
+        }
+    }
+
     private function fromAddress(): string
     {
         $address = (string) $this->config->get('mail.from.address');

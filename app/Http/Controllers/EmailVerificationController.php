@@ -23,7 +23,7 @@ final class EmailVerificationController
         // Respond identically whether or not the email is registered or
         // already verified, to avoid leaking account state.
         if ($user !== null && !$user->hasVerifiedEmail()) {
-            $mailer->send(new VerifyEmail($user, $user->verificationUrl()));
+            $mailer->trySend(new VerifyEmail($user, $user->verificationUrl()));
         }
 
         return response()->json(['message' => 'If that email address is registered and unverified, a verification link has been sent.']);
