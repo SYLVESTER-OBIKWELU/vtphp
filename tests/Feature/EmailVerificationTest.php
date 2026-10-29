@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace VtPhp\Tests\Feature;
 
-use PHPUnit\Framework\Attributes\Group;
 use VtPhp\Routing\UrlSigner;
 use VtPhp\Tests\Support\FeatureTestCase;
 
@@ -102,13 +101,16 @@ final class EmailVerificationTest extends FeatureTestCase
         $this->assertSame(200, $this->request('GET', $link)->getStatusCode(), 'The genuine link still works.');
     }
 
-    #[Group('defect')]
     public function test_changing_the_email_requires_verifying_it_again(): void
     {
         $this->request('GET', (string) $this->sendLink());
 
-        $updated = $this->body($this->request('PATCH', "/api/v1/users/{$this->user['id']}", ['email' => 'unproven@example.com']))['data'];
+        $same = $this->body($this->request('PATCH', "/api/v1/users/{$this->user['id']}", ['name' => 'Grace', 'email' => 'grace@example.com']))['data'];
+        $this->assertTrue($same['email_verified'], 'Re-submitting the same address keeps verification.');
 
+        $updated = $this->body($this->request('PATCH', "/api/v1/users/{$this->user['id']}", ['email' => 'unproven@example.com']))['data'];
         $this->assertFalse($updated['email_verified'], 'The new, unproven address inherited verified status.');
+
+        $this->assertNotNull($this->sendLink('unproven@example.com'), 'The new address can be verified.');
     }
 }

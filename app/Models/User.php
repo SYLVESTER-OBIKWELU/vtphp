@@ -46,6 +46,25 @@ final class User extends Model
         );
     }
 
+    /**
+     * Changing an existing user's address clears its verified status, so a
+     * new, unproven address never inherits it.
+     */
+    protected function email(): Attribute
+    {
+        return Attribute::make(
+            set: function (string $value): array {
+                $attributes = ['email' => $value];
+
+                if ($this->exists && $value !== $this->getOriginal('email')) {
+                    $attributes['email_verified_at'] = null;
+                }
+
+                return $attributes;
+            },
+        );
+    }
+
     public function hasVerifiedEmail(): bool
     {
         return $this->email_verified_at !== null;
