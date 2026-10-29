@@ -70,9 +70,21 @@ final class Pipeline
 
                     public function handle(ServerRequestInterface $request): ResponseInterface
                     {
-                        $instance = $this->middleware instanceof MiddlewareInterface
-                            ? $this->middleware
-                            : $this->container->get($this->middleware);
+                        if ($this->middleware instanceof MiddlewareInterface) {
+                            return $this->middleware->process($request, $this->next);
+                        }
+
+                        // "Class:param1,param2" passes parameters to a ConfigurableMiddleware.
+                        [$class, $parameters] = array_pad(explode(':', $this->middleware, 2), 2, null);
+                        $instance = $this->container->get($class);
+
+                        if ($parameters !== null) {
+                            if (!$instance instanceof ConfigurableMiddleware) {
+                                throw new \InvalidArgumentException("Middleware [{$class}] does not accept parameters.");
+                            }
+
+                            $instance = $instance->withParameters(explode(',', $parameters));
+                        }
 
                         return $instance->process($request, $this->next);
                     }

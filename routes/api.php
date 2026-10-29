@@ -7,22 +7,25 @@ use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\UserController;
 use VtPhp\Middleware\Authenticate;
+use VtPhp\Middleware\ThrottleRequests;
 use VtPhp\Routing\Router;
 
 /** @var Router $router */
 
-$router->group(['prefix' => '/api/v1'], function (Router $router): void {
+$router->group(['prefix' => '/api/v1', 'middleware' => [ThrottleRequests::using('api')]], function (Router $router): void {
+    $throttleAuth = [ThrottleRequests::using('auth')];
+
     // Sign-up is public; everything else needs a logged-in user.
-    $router->post('/users', [UserController::class, 'store'], 'users.store');
+    $router->post('/users', [UserController::class, 'store'], 'users.store', $throttleAuth);
     $router->apiResource('users', UserController::class, ['except' => ['store'], 'middleware' => [Authenticate::class]]);
 
-    $router->post('/login', [AuthController::class, 'login'], 'auth.login');
+    $router->post('/login', [AuthController::class, 'login'], 'auth.login', $throttleAuth);
     $router->post('/logout', [AuthController::class, 'logout'], 'auth.logout');
     $router->get('/me', [AuthController::class, 'me'], 'auth.me', [Authenticate::class]);
 
-    $router->post('/password/forgot', [PasswordResetController::class, 'forgot'], 'password.forgot');
-    $router->post('/password/reset', [PasswordResetController::class, 'reset'], 'password.reset');
+    $router->post('/password/forgot', [PasswordResetController::class, 'forgot'], 'password.forgot', $throttleAuth);
+    $router->post('/password/reset', [PasswordResetController::class, 'reset'], 'password.reset', $throttleAuth);
 
-    $router->post('/email/verification-notification', [EmailVerificationController::class, 'send'], 'verification.send');
+    $router->post('/email/verification-notification', [EmailVerificationController::class, 'send'], 'verification.send', $throttleAuth);
     $router->get('/email/verify/{user}/{hash}', [EmailVerificationController::class, 'verify'], 'verification.verify');
 });

@@ -50,6 +50,6 @@ final class ExceptionHandler
             $payload['error']['trace'] = explode("\n", $e->getTraceAsString());
         }
 
-        return new JsonResponse($payload, $status);
+        return new JsonResponse($payload, $status, $e instanceof HttpException ? $e->getHeaders() : []);
     }
 }

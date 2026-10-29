@@ -6,8 +6,15 @@ namespace VtPhp\Exceptions;
 
 final class TooManyRequestsHttpException extends HttpException
 {
-    public function __construct(string $message = 'Too many requests.')
+    /**
+     * @param array<string, string> $headers
+     */
+    public function __construct(string $message = 'Too many requests.', ?int $retryAfter = null, array $headers = [])
     {
-        parent::__construct(429, $message, 'TOO_MANY_REQUESTS');
+        if ($retryAfter !== null) {
+            $headers['Retry-After'] = (string) $retryAfter;
+        }
+
+        parent::__construct(429, $message, 'TOO_MANY_REQUESTS', $retryAfter !== null ? ['retry_after' => $retryAfter] : [], headers: $headers);
     }
 }
