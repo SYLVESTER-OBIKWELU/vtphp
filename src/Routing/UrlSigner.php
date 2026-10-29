@@ -6,6 +6,7 @@ namespace VtPhp\Routing;
 
 use Psr\Http\Message\ServerRequestInterface;
 use VtPhp\Config\Repository;
+use VtPhp\Support\AppKey;
 
 /**
  * Tamper-proof, optionally expiring URLs, like Laravel's signed routes.
@@ -76,22 +77,6 @@ final class UrlSigner
 
     private function key(): string
     {
-        $key = (string) $this->config->get('app.key', '');
-
-        if ($key === '') {
-            throw new \RuntimeException('No application key is set. Run `php forge key:generate`.');
-        }
-
-        if (str_starts_with($key, 'base64:')) {
-            $decoded = base64_decode(substr($key, 7), true);
-
-            if ($decoded === false || $decoded === '') {
-                throw new \RuntimeException('APP_KEY is not valid base64. Run `php forge key:generate`.');
-            }
-
-            return $decoded;
-        }
-
-        return $key;
+        return AppKey::bytes($this->config);
     }
 }

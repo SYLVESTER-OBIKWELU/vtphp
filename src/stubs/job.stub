@@ -1,0 +1,39 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Jobs;
+
+use VtPhp\Queue\Job;
+
+final class {{ class }} extends Job
+{
+    /** How many times to try before giving up. */
+    public ?int $tries = 3;
+
+    /** Seconds to wait between tries. */
+    public int|array $backoff = 10;
+
+    public function __construct()
+    {
+        // Store what the job needs here. Models are saved by id and loaded
+        // fresh when the job runs.
+    }
+
+    /**
+     * Do the work. Type-hint any class you need (a Mailer, a service...) and
+     * it's passed in for you.
+     */
+    public function handle(): void
+    {
+        //
+    }
+
+    /**
+     * Runs once if every try failed.
+     */
+    public function failed(\Throwable $exception): void
+    {
+        //
+    }
+}

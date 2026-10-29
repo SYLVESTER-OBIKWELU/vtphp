@@ -19,6 +19,8 @@ use VtPhp\Http\ResponseFactory;
 use VtPhp\Logging\LogManager;
 use VtPhp\Mail\Mailer;
 use VtPhp\Pagination\PaginationState;
+use VtPhp\Queue\QueueManager;
+use VtPhp\Queue\Worker;
 use VtPhp\Routing\ControllerDispatcher;
 use VtPhp\Routing\Router;
 use VtPhp\Session\SessionManager;
@@ -109,6 +111,16 @@ final class CoreServiceProvider extends ServiceProvider
             }
         }));
 
+        $this->app->singleton(
+            QueueManager::class,
+            fn (Application $app) => new QueueManager($app, $app->make(Repository::class))
+        );
+
+        $this->app->bind(
+            Worker::class,
+            fn (Application $app) => new Worker($app->make(QueueManager::class), $app, $app->make(LoggerInterface::class))
+        );
+
         $this->app->afterResolving(
             FormRequest::class,
             static fn (FormRequest $request) => $request->validateResolved(),
@@ -122,5 +134,6 @@ final class CoreServiceProvider extends ServiceProvider
         $this->app->alias('view', BladeEngine::class);
         $this->app->alias('mailer', Mailer::class);
         $this->app->alias('cache', CacheManager::class);
+        $this->app->alias('queue', QueueManager::class);
     }
 }

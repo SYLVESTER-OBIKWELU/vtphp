@@ -12,6 +12,9 @@ use Symfony\Component\Mailer\Transport\Smtp\Stream\SocketStream;
 use Symfony\Component\Mailer\Transport\TransportInterface;
 use Symfony\Component\Mime\Email;
 use VtPhp\Config\Repository;
+use VtPhp\Queue\QueueManager;
+use VtPhp\Queue\SendQueuedMailable;
+use VtPhp\Queue\SyncQueue;
 
 /**
  * Thin wrapper over symfony/mailer. The "log" driver writes the rendered
@@ -87,6 +90,26 @@ final class Mailer
 
             return false;
         }
+    }
+
+    /**
+     * Send in the background via the queue, so the request doesn't wait for
+     * the mail server. On the "sync" connection there is no worker to retry
+     * it, so it's sent now with trySend(): failures are logged, not thrown.
+     */
+    public function queue(Mailable $mailable, ?string $queue = null): void
+    {
+        $queues = app(QueueManager::class);
+
+        if ($queues->connection() instanceof SyncQueue) {
+            $this->trySend($mailable);
+
+            return;
+        }
+
+        $job = new SendQueuedMailable($mailable);
+        $job->queue = $queue;
+        $queues->push($job);
     }
 
     private function fromAddress(): string

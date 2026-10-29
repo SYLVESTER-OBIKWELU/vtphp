@@ -29,10 +29,17 @@ final class Kernel
         \VtPhp\Console\Commands\MakeMailCommand::class,
         \VtPhp\Console\Commands\MakeRequestCommand::class,
         \VtPhp\Console\Commands\MakePolicyCommand::class,
+        \VtPhp\Console\Commands\MakeJobCommand::class,
         \VtPhp\Console\Commands\StubPublishCommand::class,
         \VtPhp\Console\Commands\CacheClearCommand::class,
         \VtPhp\Console\Commands\SessionGcCommand::class,
         \VtPhp\Console\Commands\TokensPruneCommand::class,
+        \VtPhp\Console\Commands\QueueWorkCommand::class,
+        \VtPhp\Console\Commands\QueueFailedCommand::class,
+        \VtPhp\Console\Commands\QueueRetryCommand::class,
+        \VtPhp\Console\Commands\QueueForgetCommand::class,
+        \VtPhp\Console\Commands\QueueFlushCommand::class,
+        \VtPhp\Console\Commands\QueueClearCommand::class,
         \VtPhp\Console\Commands\DbSeedCommand::class,
     ];
 

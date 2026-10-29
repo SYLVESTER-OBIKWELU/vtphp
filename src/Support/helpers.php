@@ -144,3 +144,13 @@ if (!function_exists('gate')) {
         return app(\VtPhp\Auth\Access\Gate::class);
     }
 }
+
+if (!function_exists('dispatch')) {
+    /**
+     * Queue a job: dispatch(new SendInvoice($order))->delay(60).
+     */
+    function dispatch(\VtPhp\Queue\Job $job): \VtPhp\Queue\PendingDispatch
+    {
+        return new \VtPhp\Queue\PendingDispatch($job);
+    }
+}

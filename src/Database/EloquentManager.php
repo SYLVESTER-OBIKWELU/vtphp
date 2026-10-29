@@ -31,6 +31,11 @@ final class EloquentManager
         $this->capsule->bootEloquent();
     }
 
+    public function connection(): \Illuminate\Database\Connection
+    {
+        return $this->capsule->getConnection();
+    }
+
     /**
      * @return array<string, mixed>
      */

@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace VtPhp\Mail;
 
+use VtPhp\Queue\SerializesModels;
+
 /**
  * Base class for Blade-rendered emails, e.g. `App\Mail\WelcomeEmail`.
+ * Models it holds are stored by id when it's queued (see Mailer::queue()).
  */
 abstract class Mailable
 {
+    use SerializesModels;
+
     /** @var array<int, string> */
     protected array $to = [];
 

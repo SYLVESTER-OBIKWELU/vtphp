@@ -20,7 +20,8 @@ final class CliTest extends FeatureTestCase
         'about', 'serve', 'key:generate', 'route:list', 'migrate', 'migrate:rollback', 'migrate:status',
         'make:controller', 'make:model', 'make:resource', 'make:migration', 'make:middleware',
         'make:seeder', 'make:mail', 'make:request', 'stub:publish', 'db:seed',
-        'cache:clear', 'session:gc', 'tokens:prune', 'make:policy',
+        'cache:clear', 'session:gc', 'tokens:prune', 'make:policy', 'make:job',
+        'queue:work', 'queue:failed', 'queue:retry', 'queue:forget', 'queue:flush', 'queue:clear',
     ];
 
     private ?\Closure $sandboxAutoloader = null;
@@ -297,6 +298,24 @@ final class CliTest extends FeatureTestCase
         $this->assertValidPhp($app->appPath('Http/Requests/UpdateTagRequest.php'));
         $this->assertStringContainsString('$this->resource->toArray()', $this->assertValidPhp($app->appPath('Http/Resources/TagResource.php')));
         $this->assertFileDoesNotExist($app->appPath('Http/Controllers/TagController.php'));
+    }
+
+    public function test_make_job(): void
+    {
+        $app = $this->sandbox();
+        $name = $this->uniqueName('SendReport');
+
+        [$code] = $this->forge(['command' => 'make:job', 'name' => $name], $app);
+        $this->assertSame(0, $code);
+        $this->assertStringContainsString("final class {$name} extends Job", $this->assertValidPhp($app->appPath("Jobs/{$name}.php")));
+
+        // The generated job can be dispatched and run as-is.
+        $class = "App\\Jobs\\{$name}";
+        $class::dispatchSync();
+
+        [$code, $output] = $this->forge(['command' => 'make:job', 'name' => $name], $app);
+        $this->assertSame(1, $code);
+        $this->assertStringContainsString('already exists', $output);
     }
 
     public function test_make_policy_and_make_model_p(): void
