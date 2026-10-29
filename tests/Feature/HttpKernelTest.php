@@ -63,10 +63,10 @@ final class HttpKernelTest extends FeatureTestCase
 
     public function test_wrong_methods_return_a_json_405_with_allowed_methods(): void
     {
-        $response = $this->request('PUT', '/api/v1/users/1');
+        $response = $this->request('POST', '/api/v1/users/1');
 
         $this->assertErrorCode($response, 405, 'METHOD_NOT_ALLOWED');
-        $this->assertSame(['GET', 'PATCH', 'DELETE'], $this->body($response)['error']['allowed_methods']);
+        $this->assertSame(['GET', 'PUT', 'PATCH', 'DELETE'], $this->body($response)['error']['allowed_methods']);
     }
 
     public function test_unexpected_exceptions_become_a_logged_opaque_500(): void

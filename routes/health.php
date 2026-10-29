@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Controllers\HealthController;
+use App\Http\Controllers\HealthController;
 use VtPhp\Routing\Router;
 
 /** @var Router $router */

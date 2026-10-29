@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Resources;
+namespace App\Http\Resources;
 
 use VtPhp\Resources\JsonResource;
 

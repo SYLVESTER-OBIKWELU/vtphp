@@ -62,7 +62,28 @@ final class UserApiTest extends FeatureTestCase
             'name' => 'Ada 2', 'email' => 'ada@example.com', 'password' => 'password123', 'password_confirmation' => 'password123',
         ]);
 
-        $this->assertErrorCode($response, 409, 'CONFLICT');
+        $this->assertErrorCode($response, 422, 'VALIDATION_ERROR');
+        $this->assertSame(['The email has already been taken.'], $this->body($response)['error']['errors']['email']);
+    }
+
+    public function test_store_ignores_fields_that_are_not_validated(): void
+    {
+        $response = $this->request('POST', '/api/v1/users', [
+            'name' => 'Ada', 'email' => 'ada@example.com', 'password' => 'password123', 'password_confirmation' => 'password123',
+            'email_verified_at' => '2020-01-01 00:00:00', 'id' => 500,
+        ]);
+
+        $user = $this->body($response)['data'];
+        $this->assertNotSame(500, $user['id']);
+        $this->assertFalse($user['email_verified'], 'Unvalidated fields must not be mass-assigned.');
+    }
+
+    public function test_put_and_patch_both_update(): void
+    {
+        $user = $this->createUser();
+
+        $this->assertSame('Via Put', $this->body($this->request('PUT', "/api/v1/users/{$user['id']}", ['name' => 'Via Put']))['data']['name']);
+        $this->assertSame('Via Patch', $this->body($this->request('PATCH', "/api/v1/users/{$user['id']}", ['name' => 'Via Patch']))['data']['name']);
     }
 
     public function test_show_returns_a_user_or_404(): void
@@ -89,7 +110,8 @@ final class UserApiTest extends FeatureTestCase
         $this->createUser('grace@example.com');
 
         $this->assertErrorCode($this->request('PATCH', "/api/v1/users/{$ada['id']}", ['email' => 'bad']), 422, 'VALIDATION_ERROR');
-        $this->assertErrorCode($this->request('PATCH', "/api/v1/users/{$ada['id']}", ['email' => 'grace@example.com']), 409, 'CONFLICT');
+        $this->assertErrorCode($this->request('PATCH', "/api/v1/users/{$ada['id']}", ['email' => 'grace@example.com']), 422, 'VALIDATION_ERROR');
+        $this->assertErrorCode($this->request('PATCH', "/api/v1/users/{$ada['id']}", ['name' => null]), 422, 'VALIDATION_ERROR');
         $this->assertErrorCode($this->request('PATCH', '/api/v1/users/999', ['name' => 'x']), 404, 'NOT_FOUND');
 
         $same = $this->request('PATCH', "/api/v1/users/{$ada['id']}", ['email' => 'ada@example.com']);
@@ -120,10 +142,10 @@ final class UserApiTest extends FeatureTestCase
         $this->assertSame(401, $this->request('DELETE', "/api/v1/users/{$user['id']}")->getStatusCode());
     }
 
-    #[Group('defect')]
     public function test_a_non_numeric_id_is_a_404_not_a_500(): void
     {
-        $this->assertSame(404, $this->request('GET', '/api/v1/users/abc')->getStatusCode());
+        $this->assertErrorCode($this->request('GET', '/api/v1/users/abc'), 404, 'NOT_FOUND');
+        $this->assertErrorCode($this->request('PATCH', '/api/v1/users/abc', ['name' => 'x']), 404, 'NOT_FOUND');
     }
 
     #[Group('defect')]
@@ -135,6 +157,6 @@ final class UserApiTest extends FeatureTestCase
             'name' => 'Ada', 'email' => 'ADA@example.com', 'password' => 'password123', 'password_confirmation' => 'password123',
         ]);
 
-        $this->assertSame(409, $response->getStatusCode());
+        $this->assertSame(422, $response->getStatusCode());
     }
 }

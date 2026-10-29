@@ -73,7 +73,7 @@ final class CliTest extends FeatureTestCase
             'auth.login', 'auth.logout', 'auth.me'] as $name) {
             $this->assertStringContainsString($name, $output);
         }
-        $this->assertStringContainsString('App\Controllers\UserController@index', $output);
+        $this->assertStringContainsString('App\Http\Controllers\UserController@index', $output);
     }
 
     public function test_migrate_status_rollback_and_migrate_again(): void

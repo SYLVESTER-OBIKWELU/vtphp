@@ -13,12 +13,12 @@ final class UserSeeder extends Seeder
     {
         User::query()->firstOrCreate(
             ['email' => 'ada@example.com'],
-            ['name' => 'Ada Lovelace', 'password' => password_hash('password', PASSWORD_BCRYPT)],
+            ['name' => 'Ada Lovelace', 'password' => 'password'],
         );
 
         User::query()->firstOrCreate(
             ['email' => 'grace@example.com'],
-            ['name' => 'Grace Hopper', 'password' => password_hash('password', PASSWORD_BCRYPT)],
+            ['name' => 'Grace Hopper', 'password' => 'password'],
         );
     }
 }
