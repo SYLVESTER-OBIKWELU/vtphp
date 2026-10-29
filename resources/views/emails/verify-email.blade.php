@@ -13,6 +13,8 @@
 
     <p><a href="{{ $url }}">Verify Email Address</a></p>
 
+    <p>This verification link will expire in 60 minutes.</p>
+
     <p>If you did not create an account, no further action is required.</p>
 </body>
 

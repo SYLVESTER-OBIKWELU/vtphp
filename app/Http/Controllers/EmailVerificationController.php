@@ -10,7 +10,9 @@ use App\Mail\VerifyEmail;
 use App\Models\User;
 use VtPhp\Exceptions\AuthorizationException;
 use VtPhp\Http\JsonResponse;
+use VtPhp\Http\Request;
 use VtPhp\Mail\Mailer;
+use VtPhp\Routing\UrlSigner;
 
 final class EmailVerificationController
 {
@@ -27,9 +29,9 @@ final class EmailVerificationController
         return response()->json(['message' => 'If that email address is registered and unverified, a verification link has been sent.']);
     }
 
-    public function verify(User $user, string $hash): UserResource
+    public function verify(User $user, string $hash, Request $request, UrlSigner $signer): UserResource
     {
-        if (!hash_equals($user->verificationHash(), $hash)) {
+        if (!$signer->hasValidSignature($request->psr()) || !hash_equals($user->verificationHash(), $hash)) {
             throw new AuthorizationException('Invalid or expired email verification link.');
         }
 

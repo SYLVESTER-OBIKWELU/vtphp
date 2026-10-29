@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace VtPhp\Tests\Feature;
 
 use PHPUnit\Framework\Attributes\Group;
+use VtPhp\Routing\UrlSigner;
 use VtPhp\Tests\Support\FeatureTestCase;
 
 final class EmailVerificationTest extends FeatureTestCase
@@ -33,8 +34,14 @@ final class EmailVerificationTest extends FeatureTestCase
         }
 
         preg_match('/href="([^"]+)"/', end($mails)['body'], $match);
+        $url = html_entity_decode($match[1]);
 
-        return (string) parse_url(html_entity_decode($match[1]), PHP_URL_PATH);
+        return parse_url($url, PHP_URL_PATH).'?'.parse_url($url, PHP_URL_QUERY);
+    }
+
+    private function signedPath(string $path, ?\DateTimeInterface $expires = null): string
+    {
+        return $this->app->make(UrlSigner::class)->sign($path, $expires);
     }
 
     public function test_the_emailed_link_verifies_the_address(): void
@@ -44,6 +51,7 @@ final class EmailVerificationTest extends FeatureTestCase
         $this->assertNotNull($path);
         $this->assertSame('Verify your email address', $this->logs->mails()[0]['subject']);
         $this->assertStringStartsWith("/api/v1/email/verify/{$this->user['id']}/", $path);
+        $this->assertMatchesRegularExpression('/[?&]expires=\d+&signature=[a-f0-9]{64}$/', $path);
 
         $verified = $this->request('GET', $path);
         $this->assertSame(200, $verified->getStatusCode());
@@ -63,19 +71,35 @@ final class EmailVerificationTest extends FeatureTestCase
 
     public function test_a_wrong_hash_or_unknown_user_is_rejected(): void
     {
-        $this->assertErrorCode($this->request('GET', "/api/v1/email/verify/{$this->user['id']}/".str_repeat('0', 40)), 403, 'FORBIDDEN');
+        $this->assertErrorCode($this->request('GET', $this->signedPath("/api/v1/email/verify/{$this->user['id']}/".str_repeat('0', 40))), 403, 'FORBIDDEN');
         $this->assertErrorCode($this->request('GET', '/api/v1/email/verify/999/'.str_repeat('0', 40)), 404, 'NOT_FOUND');
         $this->assertFalse($this->body($this->request('GET', "/api/v1/users/{$this->user['id']}"))['data']['email_verified']);
     }
 
-    #[Group('defect')]
     public function test_a_verification_link_cannot_be_forged_from_the_email_alone(): void
     {
-        // The "signature" is sha1(email): anyone can verify any address
-        // without access to the inbox. It should be an HMAC keyed on APP_KEY.
         $forged = "/api/v1/email/verify/{$this->user['id']}/".sha1('grace@example.com');
 
-        $this->assertSame(403, $this->request('GET', $forged)->getStatusCode());
+        $this->assertErrorCode($this->request('GET', $forged), 403, 'FORBIDDEN');
+        $this->assertErrorCode($this->request('GET', $forged.'?signature='.str_repeat('a', 64)), 403, 'FORBIDDEN');
+        $this->assertFalse($this->body($this->request('GET', "/api/v1/users/{$this->user['id']}"))['data']['email_verified']);
+    }
+
+    public function test_a_tampered_or_expired_link_is_rejected(): void
+    {
+        $link = (string) $this->sendLink();
+
+        $extended = (string) preg_replace('/expires=\d+/', 'expires='.(time() + 86400 * 365), $link);
+        $this->assertErrorCode($this->request('GET', $extended), 403, 'FORBIDDEN');
+
+        $other = $this->createUser('ada@example.com');
+        $retargeted = str_replace("/verify/{$this->user['id']}/", "/verify/{$other['id']}/", $link);
+        $this->assertErrorCode($this->request('GET', $retargeted), 403, 'FORBIDDEN');
+
+        $expired = $this->signedPath("/api/v1/email/verify/{$this->user['id']}/".sha1('grace@example.com'), now()->modify('-1 minute'));
+        $this->assertErrorCode($this->request('GET', $expired), 403, 'FORBIDDEN');
+
+        $this->assertSame(200, $this->request('GET', $link)->getStatusCode(), 'The genuine link still works.');
     }
 
     #[Group('defect')]

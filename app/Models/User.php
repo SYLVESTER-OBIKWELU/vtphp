@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use VtPhp\Routing\UrlSigner;
 
 /**
  * @property int $id
@@ -18,6 +19,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class User extends Model
 {
+    public const VERIFICATION_TTL_MINUTES = 60;
+
     /** @var array<int, string> */
     protected $fillable = ['name', 'email', 'password'];
 
@@ -58,8 +61,14 @@ final class User extends Model
         return sha1($this->email);
     }
 
+    /**
+     * A signed link that expires after VERIFICATION_TTL_MINUTES, so it can't
+     * be forged from the email address alone.
+     */
     public function verificationUrl(): string
     {
-        return rtrim((string) config('app.url'), '/')."/api/v1/email/verify/{$this->id}/".$this->verificationHash();
+        $url = rtrim((string) config('app.url'), '/')."/api/v1/email/verify/{$this->id}/".$this->verificationHash();
+
+        return app(UrlSigner::class)->sign($url, now()->modify('+'.self::VERIFICATION_TTL_MINUTES.' minutes'));
     }
 }

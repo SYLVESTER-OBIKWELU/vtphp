@@ -48,7 +48,9 @@ php forge db:seed
 php forge serve
 ```
 
-Then visit `http://127.0.0.1:8000/health` or `http://127.0.0.1:8000/api/v1/users`.
+Then visit `http://127.0.0.1:8000/health`, or log in as a seeded user with
+`POST /api/v1/login` (`{"email": "ada@example.com", "password": "password"}`).
+`APP_KEY` must be set (`key:generate`) because it signs the email-verification links.
 
 By default `DB_CONNECTION=sqlite`, so `php forge migrate` creates
 `database/database.sqlite` automatically — no external database server needed to

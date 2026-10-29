@@ -52,6 +52,7 @@ abstract class FeatureTestCase extends TestCase
             'APP_DEBUG' => 'false',
             'APP_URL' => 'http://localhost',
             'APP_TIMEZONE' => 'UTC',
+            'APP_KEY' => 'base64:'.base64_encode(str_repeat('k', 32)),
             'DB_CONNECTION' => 'sqlite',
             'DB_DATABASE' => $this->tmp.DIRECTORY_SEPARATOR.'database.sqlite',
             'SESSION_DRIVER' => 'file',
