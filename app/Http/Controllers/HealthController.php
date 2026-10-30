@@ -15,4 +15,14 @@ final class HealthController
     {
         return ['status' => 'ok', 'version' => '0.1.0'];
     }
+
+    /**
+     * This is the welcome message for the API root endpoint.
+     *
+     * @return array{message: string}
+     */
+    public function welcome(): array
+    {
+        return ['message' => 'Welcome to VTAPP API!'];
+    }
 }

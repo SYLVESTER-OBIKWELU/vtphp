@@ -29,7 +29,7 @@ final class NotFoundHint
         $docsPath = '/'.trim((string) $this->config->get('swagger.path', '/api-docs'), '/');
 
         if (!$this->config->get('swagger.enabled', false) && ($path === $docsPath || $this->similar($path, $docsPath, alsoPrefix: true))) {
-            return "The API docs are switched off. Set SWAGGER_ENABLED=true in .env, then open {$docsPath}.";
+            return "The API docs are unavailable; enable them in the configuration, then open {$docsPath}.";
         }
 
         $suggestions = [];
