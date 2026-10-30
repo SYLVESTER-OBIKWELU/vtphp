@@ -19,6 +19,22 @@ use VtPhp\Foundation\Application;
  */
 final class LoadEnvironmentVariables
 {
+    /** @var array<string, true> Keys this process took from an env file. */
+    private static array $loadedFromFile = [];
+
+    /**
+     * The keys that came from `.env` rather than the real environment, so a
+     * child process (e.g. `forge serve`'s PHP server) can be started without
+     * them and read the file itself. Otherwise the values from when it was
+     * started would count as real env vars and hide later edits to `.env`.
+     *
+     * @return list<string>
+     */
+    public static function loadedFromFile(): array
+    {
+        return array_keys(self::$loadedFromFile);
+    }
+
     public function bootstrap(Application $app): void
     {
         $file = $this->environmentFile($app);
@@ -36,6 +52,7 @@ final class LoadEnvironmentVariables
 
             putenv("{$name}={$value}");
             $_ENV[$name] = $value;
+            self::$loadedFromFile[$name] = true;
 
             if (!str_starts_with($name, 'HTTP_')) {
                 $_SERVER[$name] = $value;

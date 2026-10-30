@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace VtPhp\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Process\Process;
+use VtPhp\Console\Commands\ServeCommand;
 use VtPhp\Foundation\Application;
 use VtPhp\Foundation\Bootstrap\LoadEnvironmentVariables;
 use VtPhp\Tests\Support\TempDirectory;
@@ -113,5 +115,26 @@ final class LoadEnvironmentVariablesTest extends TestCase
         $this->load();
 
         $this->assertFalse(getenv('VTX_FROM_FILE'));
+    }
+
+    public function test_forge_serve_starts_the_server_without_the_dot_env_values(): void
+    {
+        $this->set('VTX_REAL', 'real');
+        file_put_contents($this->tmp.'/.env', "VTX_FROM_FILE=stale\nVTX_REAL=from-file\n");
+        $this->load();
+
+        $this->assertContains('VTX_FROM_FILE', LoadEnvironmentVariables::loadedFromFile());
+        $this->assertNotContains('VTX_REAL', LoadEnvironmentVariables::loadedFromFile(), 'A real env var is not from the file.');
+
+        // The PHP server forge serve starts must not inherit the values as
+        // "real" env vars, or later edits to .env would be ignored.
+        $child = new Process(
+            [PHP_BINARY, '-r', 'echo json_encode([getenv("VTX_FROM_FILE"), getenv("VTX_REAL")]);'],
+            null,
+            ServeCommand::serverEnvironment(),
+        );
+        $child->mustRun();
+
+        $this->assertSame([false, 'real'], json_decode($child->getOutput(), true));
     }
 }

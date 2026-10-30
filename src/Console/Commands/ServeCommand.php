@@ -8,6 +8,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Process\Process;
 use VtPhp\Console\Command;
+use VtPhp\Foundation\Bootstrap\LoadEnvironmentVariables;
 
 #[AsCommand(name: 'serve', description: 'Serve the application using the PHP built-in server')]
 final class ServeCommand extends Command
@@ -25,12 +26,26 @@ final class ServeCommand extends Command
 
         $this->line("Server running: <info>http://{$host}:{$port}</info>");
 
-        $process = new Process(['php', '-S', "{$host}:{$port}", '-t', 'public'], $this->app->basePath());
+        $this->line('Changes to .env apply on the next request; no restart needed.');
+
+        $process = new Process(['php', '-S', "{$host}:{$port}", '-t', 'public'], $this->app->basePath(), self::serverEnvironment());
         $process->setTimeout(null);
         $process->run(function (string $type, string $buffer): void {
             $this->output->write($buffer);
         });
 
         return $process->getExitCode() ?? self::SUCCESS;
+    }
+
+    /**
+     * The server's environment: this process's, minus what came from `.env`
+     * (false removes a variable). Each request then reads `.env` afresh,
+     * instead of being stuck with the values from when `serve` started.
+     *
+     * @return array<string, false>
+     */
+    public static function serverEnvironment(): array
+    {
+        return array_fill_keys(LoadEnvironmentVariables::loadedFromFile(), false);
     }
 }
