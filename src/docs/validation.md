@@ -58,7 +58,7 @@ Content-Type: application/json
   "success": false,
   "error": {
     "code": "VALIDATION_ERROR",
-    "message": "The given data was invalid.",
+    "message": "The title field is required.",
     "errors": {"title": ["The title field is required."]}
   }
 }

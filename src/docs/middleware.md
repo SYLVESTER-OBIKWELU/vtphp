@@ -24,7 +24,7 @@ GET /api/v1/me
 ```
 
 ```json
-{"success": false, "error": {"code": "UNAUTHENTICATED", "message": "Unauthenticated."}}
+{"success": false, "error": {"code": "UNAUTHENTICATED", "message": "You need to log in to do this.", "request_id": "..."}}
 ```
 
 with status `401`. Middleware goes in the **4th** argument, after the route's

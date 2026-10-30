@@ -252,8 +252,9 @@ Route files are the usual choice; attributes are there if you prefer them.
 
 ## Common mistakes
 
-- **`404` with `Route [/x] not found.`** The path or method doesn't match any
-  route. Check `php forge route:list`, including the `/api/v1` prefix.
+- **`404` with `No endpoint matches GET /x.`** The path or method doesn't match
+  any route. Check `php forge route:list`, including the `/api/v1` prefix.
+  With `APP_DEBUG=true`, the error's `hint` suggests the closest URL.
 - **`405 METHOD_NOT_ALLOWED`.** The path exists but not for that method,
   e.g. `POST` to a route that only accepts `GET`. The error lists the
   `allowed_methods`.
