@@ -63,7 +63,8 @@ final class ExceptionHandlerTest extends TestCase
     {
         $body = json_decode((string) (new ExceptionHandler(new TestLogger(), false))->render(new \RuntimeException('DB password is hunter2'))->getBody(), true);
 
-        $this->assertSame('Internal server error.', $body['error']['message']);
+        $this->assertSame('Something went wrong on our side. Please try again later.', $body['error']['message']);
+        $this->assertArrayNotHasKey('debug', $body['error']);
         $this->assertArrayNotHasKey('exception', $body['error']);
         $this->assertStringNotContainsString('hunter2', json_encode($body, JSON_THROW_ON_ERROR));
     }
@@ -80,8 +81,9 @@ final class ExceptionHandlerTest extends TestCase
         $body = json_decode((string) (new ExceptionHandler(new TestLogger(), true))->render(new \LogicException('details'))->getBody(), true);
 
         $this->assertSame('details', $body['error']['message']);
-        $this->assertSame(\LogicException::class, $body['error']['exception']);
-        $this->assertIsArray($body['error']['trace']);
+        $this->assertSame(\LogicException::class, $body['error']['debug']['exception']);
+        $this->assertMatchesRegularExpression('/ExceptionHandlerTest\.php:\d+$/', $body['error']['debug']['location']);
+        $this->assertIsArray($body['error']['debug']['trace'], 'Server errors include a trace.');
     }
 
     public function test_server_errors_are_logged_with_the_request_id(): void

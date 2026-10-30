@@ -6,7 +6,7 @@ namespace VtPhp\Exceptions;
 
 final class AuthorizationException extends HttpException
 {
-    public function __construct(string $message = 'This action is unauthorized.')
+    public function __construct(string $message = 'You are not allowed to do this.')
     {
         parent::__construct(403, $message, 'FORBIDDEN');
     }

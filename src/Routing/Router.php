@@ -14,7 +14,7 @@ use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\Route as SymfonyRoute;
 use Symfony\Component\Routing\RouteCollection;
 use VtPhp\Exceptions\MethodNotAllowedHttpException;
-use VtPhp\Exceptions\NotFoundHttpException;
+use VtPhp\Exceptions\RouteNotFoundException;
 
 final class Router
 {
@@ -208,7 +208,7 @@ final class Router
         try {
             $parameters = $matcher->match($uri->getPath() ?: '/');
         } catch (ResourceNotFoundException) {
-            throw new NotFoundHttpException("Route [{$uri->getPath()}] not found.");
+            throw new RouteNotFoundException($request->getMethod(), $uri->getPath());
         } catch (MethodNotAllowedException $e) {
             throw new MethodNotAllowedHttpException($e->getAllowedMethods());
         }

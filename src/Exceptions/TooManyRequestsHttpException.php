@@ -9,7 +9,7 @@ final class TooManyRequestsHttpException extends HttpException
     /**
      * @param array<string, string> $headers
      */
-    public function __construct(string $message = 'Too many requests.', ?int $retryAfter = null, array $headers = [])
+    public function __construct(string $message = 'You are sending requests too quickly. Wait a moment and try again.', ?int $retryAfter = null, array $headers = [])
     {
         if ($retryAfter !== null) {
             $headers['Retry-After'] = (string) $retryAfter;

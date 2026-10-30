@@ -13,7 +13,9 @@ use VtPhp\Config\Repository;
 use VtPhp\Cookie\CookieJar;
 use VtPhp\Database\DatabaseManager;
 use VtPhp\Database\EloquentManager;
+use Psr\Http\Message\ServerRequestInterface;
 use VtPhp\Exceptions\ExceptionHandler;
+use VtPhp\Exceptions\NotFoundHint;
 use VtPhp\Http\FormRequest;
 use VtPhp\Http\ResponseFactory;
 use VtPhp\Logging\LogManager;
@@ -65,6 +67,12 @@ final class CoreServiceProvider extends ServiceProvider
             fn (Application $app) => new ExceptionHandler(
                 $app->make(LoggerInterface::class),
                 (bool) $app->make(Repository::class)->get('app.debug', false),
+                $app->basePath(),
+                // Resolved only when a 404 happens in debug mode.
+                static fn (ServerRequestInterface $request): string => (new NotFoundHint(
+                    $app->make(Router::class),
+                    $app->make(Repository::class),
+                ))($request),
             )
         );
 

@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use Nyholm\Psr7\ServerRequest;
 use Symfony\Component\Routing\Route;
 use VtPhp\Config\Repository;
+use VtPhp\Exceptions\HttpStatus;
 use VtPhp\Http\FormRequest;
 use VtPhp\Http\JsonResponse;
 use VtPhp\Middleware\Authenticate;
@@ -726,6 +727,7 @@ final class OpenApiGenerator
                         'properties' => [
                             'code' => ['type' => 'string', 'example' => 'NOT_FOUND'],
                             'message' => ['type' => 'string'],
+                            'request_id' => ['type' => 'string', 'description' => 'Quote this when reporting a problem.'],
                         ],
                         'required' => ['code', 'message'],
                     ],
@@ -740,7 +742,7 @@ final class OpenApiGenerator
                         'type' => 'object',
                         'properties' => [
                             'code' => ['type' => 'string', 'example' => 'VALIDATION_ERROR'],
-                            'message' => ['type' => 'string', 'example' => 'The given data was invalid.'],
+                            'message' => ['type' => 'string', 'example' => 'The email field must be a valid email address.'],
                             'errors' => [
                                 'type' => 'object',
                                 'additionalProperties' => ['type' => 'array', 'items' => ['type' => 'string']],
@@ -778,20 +780,23 @@ final class OpenApiGenerator
      */
     private function errorResponses(): array
     {
-        $error = fn (string $description, string $code): array => $this->jsonResponse([
+        $error = fn (string $description, int $status): array => $this->jsonResponse([
             'allOf' => [['$ref' => '#/components/schemas/Error']],
-            'example' => ['success' => false, 'error' => ['code' => $code, 'message' => $description]],
+            'example' => ['success' => false, 'error' => ['code' => HttpStatus::code($status), 'message' => HttpStatus::message($status)]],
         ], $description);
 
         return [
-            'Unauthenticated' => $error('Not logged in.', 'UNAUTHENTICATED'),
-            'Forbidden' => $error('Logged in, but not allowed to do this.', 'FORBIDDEN'),
-            'NotFound' => $error('Not found.', 'NOT_FOUND'),
+            'Unauthenticated' => $error('Not logged in.', 401),
+            'Forbidden' => $error('Logged in, but not allowed to do this.', 403),
+            'NotFound' => $error('Not found.', 404),
             'ValidationFailed' => $this->jsonResponse(['$ref' => '#/components/schemas/ValidationError'], 'The input is invalid.'),
             'TooManyRequests' => [
                 'description' => 'Too many requests. Wait for the number of seconds in the Retry-After header.',
                 'headers' => ['Retry-After' => ['schema' => ['type' => 'integer']]],
-                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/Error']]],
+                'content' => ['application/json' => ['schema' => [
+                    'allOf' => [['$ref' => '#/components/schemas/Error']],
+                    'example' => ['success' => false, 'error' => ['code' => HttpStatus::code(429), 'message' => HttpStatus::message(429), 'retry_after' => 42]],
+                ]]],
             ],
         ];
     }

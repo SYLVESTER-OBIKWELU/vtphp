@@ -154,3 +154,44 @@ if (!function_exists('dispatch')) {
         return new \VtPhp\Queue\PendingDispatch($job);
     }
 }
+
+if (!function_exists('abort')) {
+    /**
+     * Stop and send an error response: abort(404), abort(403, 'Not yours.'),
+     * abort(503, 'Down for maintenance.', ['Retry-After' => '600']).
+     *
+     * @param array<string, string> $headers
+     */
+    function abort(int $status, string $message = '', array $headers = []): never
+    {
+        throw \VtPhp\Exceptions\HttpException::forStatus($status, $message, $headers);
+    }
+}
+
+if (!function_exists('abort_if')) {
+    /**
+     * abort_if($note->locked, 423, 'This note is locked.')
+     *
+     * @param array<string, string> $headers
+     */
+    function abort_if(bool $condition, int $status, string $message = '', array $headers = []): void
+    {
+        if ($condition) {
+            abort($status, $message, $headers);
+        }
+    }
+}
+
+if (!function_exists('abort_unless')) {
+    /**
+     * abort_unless($user->is_admin, 403)
+     *
+     * @param array<string, string> $headers
+     */
+    function abort_unless(bool $condition, int $status, string $message = '', array $headers = []): void
+    {
+        if (!$condition) {
+            abort($status, $message, $headers);
+        }
+    }
+}

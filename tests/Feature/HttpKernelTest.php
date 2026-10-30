@@ -115,7 +115,8 @@ final class HttpKernelTest extends FeatureTestCase
         });
 
         $this->assertErrorCode($response, 500, 'INTERNAL_SERVER_ERROR');
-        $this->assertSame('Internal server error.', $this->body($response)['error']['message']);
+        $this->assertSame('Something went wrong on our side. Please try again later.', $this->body($response)['error']['message']);
+        $this->assertSame('req-500', $this->body($response)['error']['request_id']);
         $this->assertStringNotContainsString('secret internals', (string) $response->getBody());
 
         $errors = $this->logs->atLevel('error');
@@ -129,8 +130,10 @@ final class HttpKernelTest extends FeatureTestCase
 
         $error = $this->body($this->request('GET', '/nope'))['error'];
 
-        $this->assertSame('VtPhp\\Exceptions\\NotFoundHttpException', $error['exception']);
-        $this->assertNotEmpty($error['trace']);
+        $this->assertSame('VtPhp\\Exceptions\\RouteNotFoundException', $error['debug']['exception']);
+        $this->assertSame('src/Routing/Router.php', explode(':', $error['debug']['location'])[0], 'Paths are relative to the project.');
+        $this->assertArrayNotHasKey('trace', $error['debug'], 'No trace for client errors: it would only show the framework.');
+        $this->assertSame('Run `php forge route:list` to see every URL this app answers.', $error['hint']);
     }
 
     public function test_a_malformed_json_body_is_treated_as_empty_input(): void
